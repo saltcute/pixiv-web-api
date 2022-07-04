@@ -46,7 +46,7 @@ app.get('/topInTag', (req, res) => {
         duration?: "LAST_DAY" | "LAST_DAY" | "LAST_WEEK" | "LAST_MONTH" | undefined,
         offset?: number,
     ) {
-        pixNode.fetch.searchForIllustration(login, keyword, { duration: duration, offset: offset }, (rel: any, err: any) => {
+        pixNode.fetch.searchForIllustration(login, keyword, { duration: duration, offset: offset, sort: "MALE_DESC" }, (rel: any, err: any) => {
             if (err) throw err;
             res.send(rel);
         })
