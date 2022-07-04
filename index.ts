@@ -4,7 +4,7 @@ const port = 8888;
 import * as pixNode from 'pixnode';
 import fs = require('fs');
 
-var loginCredentials = JSON.parse(fs.readFileSync("loginCredentials.json", { encoding: 'utf-8', flag: 'r' }));
+var loginCredentials = JSON.parse(fs.readFileSync("./auth/loginCredentials.json", { encoding: 'utf-8', flag: 'r' }));
 // var currentRanking = new Object();
 
 app.get('/ranklist', (req, res) => {
