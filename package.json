@@ -9,7 +9,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "crypto": "^1.0.1",
     "express": "^4.17.3",
-    "pixnode": "^1.0.0-a"
+    "fs": "^0.0.1-security",
+    "pixnode": "^1.0.2-a"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13"
   }
 }
