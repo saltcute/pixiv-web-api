@@ -1,10 +1,17 @@
-# pixiv-web-server
+# pixiv-web-api
 
 ## Usage
 
-`git clone`
+Based on express.js.
 
-`npm install`
+```sh
+git clone https://github.com/potatopotat0/pixiv-web-api
+cd ./pixiv-web-api
+npm install
+npm start
+```
+
+Will start a web server on port 8888, or modify it yourself in `index.ts`.
 
 ## `/ranklist`
 
