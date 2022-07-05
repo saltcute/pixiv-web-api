@@ -8,6 +8,12 @@ Based on express.js.
 git clone https://github.com/potatopotat0/pixiv-web-api
 cd ./pixiv-web-api
 npm install
+npm run login
+```
+
+Follow the instruction to login, and
+
+```
 npm start
 ```
 

@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "node --nolazy -r ts-node/register index.ts",
-    "login": "node login.js"
+    "login": "node --nolazy -r ts-node/register login.ts"
   },
   "author": "",
   "license": "MIT",
