@@ -14,20 +14,28 @@ app.get('/ranklist', (req, res) => {
     function returnRanklist(
         res: any,
         login: pixNode.types.loginCredential,
+        mode?: "DAY" | "WEEK" | "MONTH" | "DAY_MALE" | "DAY_FEMALE" | "WEEK_ORIGINAL" | "WEEK_ROOKIE" | "DAY_MANGA" | undefined,
         offset?: number
     ) {
-        pixNode.fetch.illustrationRanking(login, { offset: offset, mode: "DAY" }, (rel, err) => {
+        pixNode.fetch.illustrationRanking(login, { offset: offset, mode: mode }, (rel, err) => {
             if (err) throw err;
             res.send(rel);
         })
     }
 
     const offset = typeof req.query.offset === 'number' ? req.query.offset : undefined;
+    var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
+    var duration: "DAY" | "WEEK" | "MONTH" | "DAY_MALE" | "DAY_FEMALE" | "WEEK_ORIGINAL" | "WEEK_ROOKIE" | "DAY_MANGA" | undefined
+    if (dur == "DAY" || dur == "WEEK" || dur == "MONTH" || dur == "DAY_MALE" || dur == "DAY_FEMALE" || dur == "WEEK_ORIGINAL" || dur == "WEEK_ROOKIE" || dur == "DAY_MANGA") {
+        duration = dur;
+    } else {
+        duration = "WEEK";
+    }
     if (loginCredentials.expire_time === undefined || loginCredentials.expire_time + 60 < Math.floor(Date.now() / 1000)) { // If session invaild
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) throw err;
-                returnRanklist(res, rel, offset);
+                returnRanklist(res, rel, duration, offset);
             })
         } else { // Throw error to login
             res.send({
@@ -37,7 +45,7 @@ app.get('/ranklist', (req, res) => {
             throw `LoginError: run "npm login" first`;
         }
     } else { // Session vaild, return data
-        returnRanklist(res, loginCredentials, offset);
+        returnRanklist(res, loginCredentials, duration, offset);
     }
 })
 
@@ -49,7 +57,7 @@ app.get('/topInTag', (req, res) => {
         res: any,
         login: pixNode.types.loginCredential,
         keyword: string,
-        duration?: "LAST_DAY" | "LAST_DAY" | "LAST_WEEK" | "LAST_MONTH" | undefined,
+        duration?: "LAST_DAY" | "LAST_WEEK" | "LAST_MONTH" | undefined,
         offset?: number,
     ) {
         pixNode.fetch.searchForIllustration(login, keyword, { duration: duration, offset: offset, sort: "MALE_DESC" }, (rel: any, err: any) => {
@@ -59,6 +67,13 @@ app.get('/topInTag', (req, res) => {
     }
 
     const offset = typeof req.query.offset === "string" ? parseInt(req.query.offset) : undefined;
+    var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
+    var duration: "LAST_DAY" | "LAST_WEEK" | "LAST_MONTH" | undefined;
+    if (dur == "LAST_DAY" || dur == "LAST_WEEK" || dur == "LAST_MONTH") {
+        duration = dur;
+    } else {
+        duration = "LAST_WEEK";
+    }
     var keyword = "";
     if (req.query.keyword === undefined) {
         res.send({
@@ -79,7 +94,7 @@ app.get('/topInTag', (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) throw err;
-                returnTagRanklist(res, rel, keyword, "LAST_DAY", offset);
+                returnTagRanklist(res, rel, keyword, duration, offset);
             })
         } else { // Throw error to login
             res.send({
@@ -89,7 +104,7 @@ app.get('/topInTag', (req, res) => {
             throw `LoginError: LoginError: run "npm login" first`;
         }
     } else { // Session vaild, return data
-        returnTagRanklist(res, loginCredentials, keyword, "LAST_DAY", offset);
+        returnTagRanklist(res, loginCredentials, keyword, duration, offset);
     }
 })
 
