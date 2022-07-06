@@ -38,8 +38,9 @@ app.get('/ranklist', (req, res) => {
                 returnRanklist(res, rel, duration, offset);
             })
         } else { // Throw error to login
+            res.status(500);
             res.send({
-                code: 502,
+                code: 500,
                 response: { message: "Login credentials invalid." }
             })
             throw `LoginError: run "npm login" first`;
@@ -76,17 +77,19 @@ app.get('/topInTag', (req, res) => {
     }
     var keyword = "";
     if (req.query.keyword === undefined) {
+        res.status(400);
         res.send({
-            code: 502,
+            code: 400,
             response: { message: "Please specificate a keyword." }
         });
         return;
     } else if (typeof req.query.keyword == "string") {
         keyword = req.query.keyword;
     } else {
+        res.status(400);
         res.send({
-            code: 504,
-            response: { message: "Please specificate a valid keyword." }
+            code: 400,
+            response: { message: `Please specificate a valid keyword (Recieved ${req.query.keyword}).` }
         });
         return;
     }
@@ -97,8 +100,9 @@ app.get('/topInTag', (req, res) => {
                 returnTagRanklist(res, rel, keyword, duration, offset);
             })
         } else { // Throw error to login
+            res.status(500);
             res.send({
-                code: 503,
+                code: 500,
                 response: { message: "Login credentials illegal." }
             })
             throw `LoginError: LoginError: run "npm login" first`;
@@ -123,17 +127,19 @@ app.get("/illustrationDetail", (req, res) => {
     const offset = typeof req.query.offset === "string" ? parseInt(req.query.offset) : undefined;
     var keyword = "";
     if (req.query.keyword === undefined) {
+        res.status(400);
         res.send({
-            code: 503,
+            code: 400,
             response: { message: "Please specificate the illustration ID." }
         });
         return;
     } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
         keyword = req.query.keyword;
     } else {
+        res.status(400);
         res.send({
-            code: 504,
-            response: { message: "Please specificate a valid illustration ID." }
+            code: 400,
+            response: { message: `Please specificate a valid illustration ID (Recieved ${req.query.keyword})` }
         });
         return;
     }
@@ -144,8 +150,9 @@ app.get("/illustrationDetail", (req, res) => {
                 returnIllustrationDetail(res, rel, keyword);
             })
         } else { // Throw error to login
+            res.status(500);
             res.send({
-                code: 502,
+                code: 500,
                 response: { message: "Login credentials illegal." }
             })
             throw `LoginError: run "npm login" first`
@@ -170,17 +177,19 @@ app.get("/creatorIllustrations", (req, res) => {
 
     var keyword: number;
     if (req.query.keyword === undefined) {
+        res.status(400);
         res.send({
-            code: 503,
+            code: 400,
             response: { message: "Please specificate the illustration ID." }
         });
         return;
     } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
         keyword = parseInt(req.query.keyword);
     } else {
+        res.status(400);
         res.send({
-            code: 504,
-            response: { message: "Please specificate a valid illustration ID." }
+            code: 400,
+            response: { message: `Please specificate a valid illustration ID (Recieved ${req.query.keyword}).` }
         });
         return;
     }
@@ -191,8 +200,9 @@ app.get("/creatorIllustrations", (req, res) => {
                 returncreatorIllustrations(res, rel, keyword);
             })
         } else { // Throw error to login
+            res.status(500);
             res.send({
-                code: 502,
+                code: 500,
                 response: { message: "Login credentials illegal." }
             })
             throw `LoginError: run "npm login" first`
