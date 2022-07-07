@@ -19,10 +19,8 @@ app.get('/ranklist', (req, res) => {
     ) {
         pixNode.fetch.illustrationRanking(login, { offset: offset, mode: mode }, (rel, err) => {
             if (err) {
-                console.log(err);
                 res.send(err);
-            }
-            res.send(rel);
+            } else res.send(rel);
         })
     }
 
@@ -38,13 +36,12 @@ app.get('/ranklist', (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) {
-                    console.log(err);
                     res.send(err);
                 }
                 if (rel) returnRanklist(res, rel, duration, offset);
             })
         } else { // Throw error to login
-            res.status(500);
+            // res.status(500);
             res.send({
                 code: 500,
                 response: { message: "Login credentials invalid." }
@@ -69,10 +66,8 @@ app.get('/topInTag', (req, res) => {
     ) {
         pixNode.fetch.searchForIllustration(login, keyword, { duration: duration, offset: offset, sort: "MALE_DESC" }, (rel: any, err: any) => {
             if (err) {
-                console.log(err);
                 res.send(err);
-            }
-            res.send(rel);
+            } else res.send(rel);
         })
     }
 
@@ -86,7 +81,7 @@ app.get('/topInTag', (req, res) => {
     }
     var keyword = "";
     if (req.query.keyword === undefined) {
-        res.status(400);
+        // res.status(400);
         res.send({
             code: 400,
             response: { message: "Please specificate a keyword." }
@@ -95,7 +90,7 @@ app.get('/topInTag', (req, res) => {
     } else if (typeof req.query.keyword == "string") {
         keyword = req.query.keyword;
     } else {
-        res.status(400);
+        // res.status(400);
         res.send({
             code: 400,
             response: { message: `Please specificate a valid keyword (Recieved ${req.query.keyword}).` }
@@ -106,13 +101,12 @@ app.get('/topInTag', (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) {
-                    console.log(err);
                     res.send(err);
                 }
                 if (rel) returnTagRanklist(res, rel, keyword, duration, offset);
             })
         } else { // Throw error to login
-            res.status(500);
+            // res.status(500);
             res.send({
                 code: 500,
                 response: { message: "Login credentials illegal." }
@@ -132,17 +126,14 @@ app.get("/illustrationDetail", (req, res) => {
     ) {
         pixNode.fetch.illustration(login, keyword, (rel: any, err: any) => {
             if (err) {
-                console.log(err);
                 res.send(err);
-            }
-            res.send(rel);
+            } else res.send(rel);
         })
     }
 
-    const offset = typeof req.query.offset === "string" ? parseInt(req.query.offset) : undefined;
     var keyword = "";
     if (req.query.keyword === undefined) {
-        res.status(400);
+        // res.status(400);
         res.send({
             code: 400,
             response: { message: "Please specificate the illustration ID." }
@@ -151,7 +142,7 @@ app.get("/illustrationDetail", (req, res) => {
     } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
         keyword = req.query.keyword;
     } else {
-        res.status(400);
+        // res.status(400);
         res.send({
             code: 400,
             response: { message: `Please specificate a valid illustration ID (Recieved ${req.query.keyword})` }
@@ -162,13 +153,12 @@ app.get("/illustrationDetail", (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) {
-                    console.log(err);
                     res.send(err);
                 }
                 if (rel) returnIllustrationDetail(res, rel, keyword);
             })
         } else { // Throw error to login
-            res.status(500);
+            // res.status(500);
             res.send({
                 code: 500,
                 response: { message: "Login credentials illegal." }
@@ -189,16 +179,14 @@ app.get("/creatorIllustrations", (req, res) => {
     ) {
         pixNode.fetch.userIllustrations(login, keyword, { contentType: "ILLUSTRATION", offset: offset }, (rel: any, err: any) => {
             if (err) {
-                console.log(err);
                 res.send(err);
-            }
-            res.send(rel);
+            } else res.send(rel);
         })
     }
 
     var keyword: number;
     if (req.query.keyword === undefined) {
-        res.status(400);
+        // res.status(400);
         res.send({
             code: 400,
             response: { message: "Please specificate the illustration ID." }
@@ -207,7 +195,7 @@ app.get("/creatorIllustrations", (req, res) => {
     } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
         keyword = parseInt(req.query.keyword);
     } else {
-        res.status(400);
+        // res.status(400);
         res.send({
             code: 400,
             response: { message: `Please specificate a valid illustration ID (Recieved ${req.query.keyword}).` }
@@ -218,13 +206,12 @@ app.get("/creatorIllustrations", (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) {
-                    console.log(err);
                     res.send(err);
                 }
                 if (rel) returncreatorIllustrations(res, rel, keyword);
             })
         } else { // Throw error to login
-            res.status(500);
+            // res.status(500);
             res.send({
                 code: 500,
                 response: { message: "Login credentials illegal." }
