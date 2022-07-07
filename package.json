@@ -13,7 +13,7 @@
     "crypto": "^1.0.1",
     "express": "^4.17.3",
     "fs": "^0.0.1-security",
-    "pixnode": "^1.0.4",
+    "pixnode": "^1.0.5",
     "ts-node": "^10.8.2"
   },
   "devDependencies": {
