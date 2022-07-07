@@ -35,7 +35,7 @@ app.get('/ranklist', (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) throw err;
-                returnRanklist(res, rel, duration, offset);
+                if (rel) returnRanklist(res, rel, duration, offset);
             })
         } else { // Throw error to login
             res.status(500);
@@ -97,7 +97,7 @@ app.get('/topInTag', (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) throw err;
-                returnTagRanklist(res, rel, keyword, duration, offset);
+                if (rel) returnTagRanklist(res, rel, keyword, duration, offset);
             })
         } else { // Throw error to login
             res.status(500);
@@ -147,7 +147,7 @@ app.get("/illustrationDetail", (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) throw err;
-                returnIllustrationDetail(res, rel, keyword);
+                if (rel) returnIllustrationDetail(res, rel, keyword);
             })
         } else { // Throw error to login
             res.status(500);
@@ -197,7 +197,7 @@ app.get("/creatorIllustrations", (req, res) => {
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
                 if (err) throw err;
-                returncreatorIllustrations(res, rel, keyword);
+                if (rel) returncreatorIllustrations(res, rel, keyword);
             })
         } else { // Throw error to login
             res.status(500);
