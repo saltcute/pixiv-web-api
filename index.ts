@@ -18,7 +18,10 @@ app.get('/ranklist', (req, res) => {
         offset?: number
     ) {
         pixNode.fetch.illustrationRanking(login, { offset: offset, mode: mode }, (rel, err) => {
-            if (err) throw err;
+            if (err) {
+                console.log(err);
+                res.send(err);
+            }
             res.send(rel);
         })
     }
@@ -34,7 +37,10 @@ app.get('/ranklist', (req, res) => {
     if (loginCredentials.expire_time === undefined || loginCredentials.expire_time + 60 < Math.floor(Date.now() / 1000)) { // If session invaild
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
-                if (err) throw err;
+                if (err) {
+                    console.log(err);
+                    res.send(err);
+                }
                 if (rel) returnRanklist(res, rel, duration, offset);
             })
         } else { // Throw error to login
@@ -62,7 +68,10 @@ app.get('/topInTag', (req, res) => {
         offset?: number,
     ) {
         pixNode.fetch.searchForIllustration(login, keyword, { duration: duration, offset: offset, sort: "MALE_DESC" }, (rel: any, err: any) => {
-            if (err) throw err;
+            if (err) {
+                console.log(err);
+                res.send(err);
+            }
             res.send(rel);
         })
     }
@@ -96,7 +105,10 @@ app.get('/topInTag', (req, res) => {
     if (loginCredentials.expire_time === undefined || loginCredentials.expire_time + 60 < Math.floor(Date.now() / 1000)) { // If session invaild
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
-                if (err) throw err;
+                if (err) {
+                    console.log(err);
+                    res.send(err);
+                }
                 if (rel) returnTagRanklist(res, rel, keyword, duration, offset);
             })
         } else { // Throw error to login
@@ -119,7 +131,10 @@ app.get("/illustrationDetail", (req, res) => {
         keyword: string
     ) {
         pixNode.fetch.illustration(login, keyword, (rel: any, err: any) => {
-            if (err) throw err;
+            if (err) {
+                console.log(err);
+                res.send(err);
+            }
             res.send(rel);
         })
     }
@@ -146,7 +161,10 @@ app.get("/illustrationDetail", (req, res) => {
     if (loginCredentials.expire_time === undefined || loginCredentials.expire_time + 60 < Math.floor(Date.now() / 1000)) { // If session invaild
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
-                if (err) throw err;
+                if (err) {
+                    console.log(err);
+                    res.send(err);
+                }
                 if (rel) returnIllustrationDetail(res, rel, keyword);
             })
         } else { // Throw error to login
@@ -170,7 +188,10 @@ app.get("/creatorIllustrations", (req, res) => {
         offset?: number
     ) {
         pixNode.fetch.userIllustrations(login, keyword, { contentType: "ILLUSTRATION", offset: offset }, (rel: any, err: any) => {
-            if (err) throw err;
+            if (err) {
+                console.log(err);
+                res.send(err);
+            }
             res.send(rel);
         })
     }
@@ -196,7 +217,10 @@ app.get("/creatorIllustrations", (req, res) => {
     if (loginCredentials.expire_time === undefined || loginCredentials.expire_time + 60 < Math.floor(Date.now() / 1000)) { // If session invaild
         if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
             pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
-                if (err) throw err;
+                if (err) {
+                    console.log(err);
+                    res.send(err);
+                }
                 if (rel) returncreatorIllustrations(res, rel, keyword);
             })
         } else { // Throw error to login
