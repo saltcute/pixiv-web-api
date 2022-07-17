@@ -6,10 +6,13 @@ import fs = require('fs');
 import { linkmap } from './linkmap';
 import config from './config/config'
 
-linkmap.load();
 var loginCredentials = JSON.parse(fs.readFileSync("./config/auth.json", { encoding: 'utf-8', flag: 'r' }));
 pixNode.enums.setLanguage("zh-cn");
-// var currentRanking = new Object();
+
+linkmap.load();
+setInterval(() => {
+    linkmap.save();
+}, 30 * 60 * 1000);
 
 app.use(express.json());
 
@@ -21,7 +24,6 @@ app.post('/updateLinkmap', (req, res) => {
             }
         }
         res.end(JSON.stringify({ "code": "200", "message": "Success" }));
-        linkmap.save();
     } else {
         res.status(401);
         res.end(JSON.stringify({ "code": "401", "message": "Authorization failed" }));
