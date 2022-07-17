@@ -1,6 +1,7 @@
 node_modules/
-test.js
 test.ts
 package-lock.json
-auth/*
+config/config.ts
+config/auth.json
 *.js
+linkmap/map.json

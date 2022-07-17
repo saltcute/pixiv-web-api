@@ -3,10 +3,33 @@ const app = express();
 const port = 8888;
 import * as pixNode from 'pixnode';
 import fs = require('fs');
+import { linkmap } from './linkmap';
+import config from './config/config'
 
-var loginCredentials = JSON.parse(fs.readFileSync("./auth/loginCredentials.json", { encoding: 'utf-8', flag: 'r' }));
+linkmap.load();
+var loginCredentials = JSON.parse(fs.readFileSync("./config/auth.json", { encoding: 'utf-8', flag: 'r' }));
 pixNode.enums.setLanguage("zh-cn");
 // var currentRanking = new Object();
+
+app.use(express.json());
+
+app.post('/updateLinkmap', (req, res) => {
+    if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
+        for (const key in req.body) {
+            for (const page in req.body[key]) {
+                linkmap.addMap(key, page, req.body[key][page].kookLink, req.body[key][page].NSFWResult)
+            }
+        }
+        res.end(JSON.stringify({ "code": "200", "message": "Success" }));
+        linkmap.save();
+    } else {
+        res.status(401);
+        res.end(JSON.stringify({ "code": "401", "message": "Authorization failed" }));
+    }
+})
+app.get('/linkmap', (req, res) => {
+    res.end(JSON.stringify(linkmap.map));
+})
 /**
  * Get today's ranklist
  */
@@ -15,16 +38,16 @@ app.get('/ranklist', (req, res) => {
         res: any,
         login: pixNode.types.loginCredential,
         mode?: "DAY" | "WEEK" | "MONTH" | "DAY_MALE" | "DAY_FEMALE" | "WEEK_ORIGINAL" | "WEEK_ROOKIE" | "DAY_MANGA" | undefined,
-        offset?: number
+        offset?: string
     ) {
-        pixNode.fetch.illustrationRanking(login, { offset: offset, mode: mode }, (rel, err) => {
+        pixNode.fetch.illustrationRanking(login, { mode: mode }, (rel, err) => {
             if (err) {
                 res.send(err);
             } else res.send(rel);
         })
     }
 
-    const offset = typeof req.query.offset === 'number' ? req.query.offset : undefined;
+    const offset = typeof req.query.offset === 'string' ? req.query.offset : undefined;
     var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
     var duration: "DAY" | "WEEK" | "MONTH" | "DAY_MALE" | "DAY_FEMALE" | "WEEK_ORIGINAL" | "WEEK_ROOKIE" | "DAY_MANGA" | undefined
     if (dur == "DAY" || dur == "WEEK" || dur == "MONTH" || dur == "DAY_MALE" || dur == "DAY_FEMALE" || dur == "WEEK_ORIGINAL" || dur == "WEEK_ROOKIE" || dur == "DAY_MANGA") {

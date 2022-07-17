@@ -1,6 +1,10 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
+    "lib": [
+      "es2020",
+      "ES2021.String"
+    ],
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
     /* Projects */
     // "incremental": true,                              /* Enable incremental compilation */
