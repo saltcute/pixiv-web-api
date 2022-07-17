@@ -5,8 +5,8 @@ import * as pixNode from 'pixnode';
 import fs = require('fs');
 
 var loginCredentials = JSON.parse(fs.readFileSync("./auth/loginCredentials.json", { encoding: 'utf-8', flag: 'r' }));
+pixNode.enums.setLanguage("zh-cn");
 // var currentRanking = new Object();
-
 /**
  * Get today's ranklist
  */

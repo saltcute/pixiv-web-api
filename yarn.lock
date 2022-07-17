@@ -434,10 +434,10 @@
   "resolved" "https://registry.npmjs.org/path-to-regexp/-/path-to-regexp-0.1.7.tgz"
   "version" "0.1.7"
 
-"pixnode@^1.0.5-b":
-  "integrity" "sha512-R7E8zvm9YPLLw3Sac/23yIBg74XH0BX3HqfeoYGEks3BBysCSqZ4xKgblqlo0h0MG0X98BmnXPtTZDcnK1yIFw=="
-  "resolved" "https://registry.npmjs.org/pixnode/-/pixnode-1.0.5-b.tgz"
-  "version" "1.0.5-b"
+"pixnode@^1.0.6":
+  "integrity" "sha512-tM2XYiCrDKuhfQ6m7rfrtK+1irPvgnouz5QdsKNU4fIHJl2yh0z6sh3KLDQI9eAoephH/nt54Kg63+U3iucs8w=="
+  "resolved" "https://registry.npmjs.org/pixnode/-/pixnode-1.0.6.tgz"
+  "version" "1.0.6"
   dependencies:
     "base64url" "^3.0.1"
     "najax" "^1.0.7"
