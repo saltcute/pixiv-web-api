@@ -4,15 +4,16 @@ const port = 8888;
 import * as pixNode from 'pixnode';
 import fs = require('fs');
 import { linkmap } from './linkmap';
-import config from './config/config'
+import config from './config/config';
+import schedule from 'node-schedule';
 
 var loginCredentials = JSON.parse(fs.readFileSync("./config/auth.json", { encoding: 'utf-8', flag: 'r' }));
-pixNode.enums.setLanguage("zh-cn");
+pixNode.common.setLanguage("zh-cn");
 
 linkmap.load();
-setInterval(() => {
+schedule.scheduleJob("30 * * * * ", () => {
     linkmap.save();
-}, 30 * 60 * 1000);
+})
 
 app.use(express.json({ limit: '50mb' }));
 
@@ -32,6 +33,39 @@ app.post('/updateLinkmap', (req, res) => {
 app.get('/linkmap', (req, res) => {
     res.end(JSON.stringify(linkmap.map));
 })
+
+app.get('/recommend', (req, res) => {
+    function returnRecommend(
+        res: any,
+        login: pixNode.types.loginCredential
+    ) {
+        pixNode.fetch.recommendedIllustrations(login, { contentType: "ILLUSTRATION", }, (rel, err) => {
+            if (err) {
+                res.send(err);
+            } else res.send(rel);
+        })
+    }
+    if (loginCredentials.expire_time === undefined || loginCredentials.expire_time + 60 < Math.floor(Date.now() / 1000)) { // If session invaild
+        if (loginCredentials.refresh_token !== undefined) { // If have logged in before 
+            pixNode.authenticate.refresh(loginCredentials.refresh_token, (rel, err) => { // Refresh current session
+                if (err) {
+                    res.send(err);
+                }
+                if (rel) returnRecommend(res, rel);
+            })
+        } else { // Throw error to login
+            // res.status(500);
+            res.send({
+                code: 500,
+                response: { message: "Login credentials invalid." }
+            })
+            throw `LoginError: run "npm login" first`;
+        }
+    } else {
+        returnRecommend(res, loginCredentials);
+    }
+});
+
 /**
  * Get today's ranklist
  */
@@ -249,5 +283,5 @@ app.get("/creatorIllustrations", (req, res) => {
 })
 
 app.listen(port, () => {
-    console.log(`pixiv-web-api server listening on port ${port}`)
+    linkmap.log(`Server start listening on port ${port}`);
 })
