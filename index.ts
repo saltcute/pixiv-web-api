@@ -19,12 +19,12 @@ app.use(express.json({ limit: '50mb' }));
 
 app.post('/updateLinkmap', (req, res) => {
     if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
+        res.end(JSON.stringify({ "code": "200", "message": "Success" }));
         for (const key in req.body) {
             for (const page in req.body[key]) {
                 linkmap.addMap(key, page, req.body[key][page].kookLink, req.body[key][page].NSFWResult)
             }
         }
-        res.end(JSON.stringify({ "code": "200", "message": "Success" }));
     } else {
         res.status(401);
         res.end(JSON.stringify({ "code": "401", "message": "Authorization failed" }));
