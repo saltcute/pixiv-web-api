@@ -535,10 +535,10 @@
   "resolved" "https://registry.npmjs.org/path-to-regexp/-/path-to-regexp-0.1.7.tgz"
   "version" "0.1.7"
 
-"pixnode@^1.0.6-a":
-  "integrity" "sha512-h9rict2Gb6bXjQDpPhtU5TM5VumaMzWZNRE/5hJlmTa8zfCaVKX3wWFHklluYaqy9qJOaiZYtkSd1S5O9lbulQ=="
-  "resolved" "https://registry.npmjs.org/pixnode/-/pixnode-1.0.6-a.tgz"
-  "version" "1.0.6-a"
+"pixnode@^1.0.8":
+  "integrity" "sha512-2fCJ4p/StnhaJooK8kV6AMU5rDyEu0YZ2FZGsinUccjFI/L0wM18dCN9RIJsHblanv77d92Ks7MLORw0nSSrCA=="
+  "resolved" "https://registry.npmjs.org/pixnode/-/pixnode-1.0.8.tgz"
+  "version" "1.0.8"
   dependencies:
     "base64url" "^3.0.1"
     "najax" "^1.0.7"

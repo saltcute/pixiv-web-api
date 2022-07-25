@@ -1,6 +1,6 @@
 {
   "name": "pixiv-web-api",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
   "main": "index.ts",
   "scripts": {
@@ -16,7 +16,7 @@
     "express": "^4.17.3",
     "fs": "^0.0.1-security",
     "node-schedule": "^2.1.0",
-    "pixnode": "^1.0.6-a",
+    "pixnode": "^1.0.8",
     "ts-node": "^10.8.2",
     "upath": "^2.0.1"
   },
