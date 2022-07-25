@@ -136,7 +136,7 @@ app.get('/topInTag', (req, res) => {
     if (dur == "LAST_DAY" || dur == "LAST_WEEK" || dur == "LAST_MONTH") {
         duration = dur;
     } else {
-        duration = "LAST_WEEK";
+        duration = undefined;
     }
     var keyword = "";
     if (req.query.keyword === undefined) {
