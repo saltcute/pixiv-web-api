@@ -14,18 +14,12 @@ linkmap.load();
 schedule.scheduleJob("30 * * * * ", () => {
     linkmap.save();
 })
-if (auth.expire_time - 60 < Math.round(Date.now())) {
-    pixNode.authenticate.refresh(auth.refresh_token, (res, err) => {
-        if (err) console.error(err);
-        auth = res;
-        fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
-        linkmap.log("Token refreshed");
-    })
-}
 var job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
     refresh();
 })
-refresh();
+if (auth.expire_time - 60 < Math.round(Date.now())) {
+    refresh();
+}
 function refresh() {
     pixNode.authenticate.refresh(auth.refresh_token, (res, err) => {
         if (err) console.error(err);
