@@ -22,14 +22,20 @@ if (auth.expire_time - 60 < Math.round(Date.now())) {
         linkmap.log("Token refreshed");
     })
 }
-schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
+var job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
+    refresh();
+})
+refresh();
+function refresh() {
     pixNode.authenticate.refresh(auth.refresh_token, (res, err) => {
         if (err) console.error(err);
         auth = res;
         fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
         linkmap.log("Token refreshed");
-    })
-})
+    });
+    job.reschedule((auth.expire_time - 60) * 1000)
+}
+refresh();
 if (auth.refresh_token == undefined) {
     throw `LoginError: run "npm login" first`;
 }
