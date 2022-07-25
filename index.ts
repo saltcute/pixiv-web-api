@@ -35,7 +35,6 @@ function refresh() {
     });
     job.reschedule((auth.expire_time - 60) * 1000)
 }
-refresh();
 if (auth.refresh_token == undefined) {
     throw `LoginError: run "npm login" first`;
 }
