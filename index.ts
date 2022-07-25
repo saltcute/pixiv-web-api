@@ -26,8 +26,8 @@ function refresh() {
         auth = res;
         fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
         linkmap.log("Token refreshed");
+        job.reschedule((auth.expire_time - 60) * 1000);
     });
-    job.reschedule((auth.expire_time - 60) * 1000)
 }
 if (auth.refresh_token == undefined) {
     throw `LoginError: run "npm login" first`;
