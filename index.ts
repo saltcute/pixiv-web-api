@@ -19,13 +19,15 @@ if (auth.expire_time - 60 < Math.round(Date.now())) {
         if (err) console.error(err);
         auth = res;
         fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
+        linkmap.log("Token refreshed");
     })
 }
-schedule.scheduleJob(auth.expire_time - 60, () => {
+schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
     pixNode.authenticate.refresh(auth.refresh_token, (res, err) => {
         if (err) console.error(err);
         auth = res;
         fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
+        linkmap.log("Token refreshed");
     })
 })
 if (auth.refresh_token == undefined) {
