@@ -1,7 +1,21 @@
 import fs from 'fs';
 import upath from 'upath';
+import bunyan from 'bunyan';
 
 export namespace linkmap {
+    export const logger = bunyan.createLogger({
+        name: "pixiv-web-api",
+        streams: [
+            {
+                level: bunyan.INFO,
+                stream: process.stdout
+            },
+            {
+                level: bunyan.ERROR,
+                stream: process.stderr
+            }
+        ]
+    })
     export type banResult = {
         ban: boolean,
         label?: string,
@@ -30,17 +44,14 @@ export namespace linkmap {
             blurAmount: number
         }
     }
-    export function log(output: string) {
-        console.log(`[${new Date().toLocaleTimeString()}] ${output.replaceAll('\n', `\n[${new Date().toLocaleTimeString()}] `)}`);
-    }
     export function load(): void {
         if (fs.existsSync(upath.join(__dirname, "map.json"))) {
             map = JSON.parse(fs.readFileSync(upath.join(__dirname, "map.json"), { encoding: "utf-8", flag: "r" }));
-            log(`Loaded linkmap`);
+            logger.info(`Loaded linkmap`);
         } else {
             map = {};
             save();
-            log(`Linkmap not found, creating new`);
+            logger.warn(`Linkmap not found, creating new`);
         }
     }
 
@@ -107,11 +118,11 @@ export namespace linkmap {
     export function save() {
         fs.writeFile(upath.join(__dirname, "map.json"), JSON.stringify(map), (err) => {
             if (err) {
-                log(`Saving linkmap failed, error message: `);
-                console.log(err);
+                logger.warn(`Saving linkmap failed, error message: `);
+                logger.warn(err);
             }
             else {
-                log(`Saved linkmap`);
+                logger.info(`Saved linkmap`);
             }
         });
     }

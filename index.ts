@@ -25,7 +25,7 @@ function refresh() {
         if (err) console.error(err);
         auth = res;
         fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
-        linkmap.log("Token refreshed");
+        linkmap.logger.info("Token refreshed");
         while (!job.reschedule((auth.expire_time - 60) * 1000));
     });
 }
@@ -43,9 +43,13 @@ app.post('/updateLinkmap', (req, res) => {
                 linkmap.addMap(key, page, req.body[key][page].kookLink, req.body[key][page].NSFWResult)
             }
         }
+        linkmap.logger.debug("Linkmap updated");
+        linkmap.logger.trace("Full request body:");
+        linkmap.logger.trace(req.body)
     } else {
         res.status(401);
         res.end(JSON.stringify({ "code": "401", "message": "Authorization failed" }));
+        linkmap.logger.debug("Linkmap updating Authorization failed");
     }
 })
 app.get('/linkmap', (req, res) => {
@@ -165,5 +169,5 @@ app.get("/creatorIllustrations", (req, res) => {
 })
 
 app.listen(port, () => {
-    linkmap.log(`Server start listening on port ${port}`);
+    linkmap.logger.info(`Server start listening on port ${port}`);
 })
