@@ -26,7 +26,10 @@ function refresh() {
         auth = res;
         fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
         linkmap.logger.info("Token refreshed");
-        while (!job.reschedule((auth.expire_time - 60) * 1000));
+        job.cancel();
+        job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
+            refresh();
+        })
     });
 }
 if (auth.refresh_token == undefined) {
