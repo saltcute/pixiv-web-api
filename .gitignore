@@ -1,5 +1,5 @@
 node_modules/
-test.ts
+test/
 package-lock.json
 config/config.ts
 config/auth.json

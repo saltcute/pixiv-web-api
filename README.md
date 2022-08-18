@@ -17,27 +17,29 @@ Follow the instruction to login, and
 npm start
 ```
 
-Will start a web server on port 8888, or modify it yourself in `index.ts`.
+A web server will start running on port 8888, or modify it yourself in `index.ts`.
 
-## `/ranklist`
+## List of API (wiki WIP)
 
-- type: `GET`
+### Requires authorization
 
-### query strings
 
-- `offset`: What number the ranklist starts at
-- `time`: Time period for the ranklist, the value could be 
-  - `DAY`
-  - `WEEK`
-  - `MONTH`
-  - `DAY_MALE`
-  - `DAY_FEMALE`
-  - `WEEK_ORIGINAL`
-  - `WEEK_ROOKIE`
-  - `DAY_MANGA`
+`POST` `/user/key/activate`
 
-## `/topInTag`
+`POST` `/linkmap/update`
 
-## `/illustrationDetail`
+### Does not require authorization
 
-## `/creatorIllustrations`
+`GET` `/user/profile/`
+
+`GET` `/linkmap/get`
+
+`GET` `/illustration/recommend`
+
+`GET` `/illustration/ranklist`
+
+`GET` `/illustration/tag`
+
+`GET` `/illustration/detail`
+
+`GET` `/illustration/creator`
