@@ -5,22 +5,38 @@ import { keygen } from '../keygen';
 import { linkmap } from '../linkmap';
 
 export namespace users {
-    export type tiers = "standard" | "backer" | "supporter" | "sponser";
-    export type commands = "top" | "tag" | "author" | "random" | "refresh" | "detail" | "illust" | "credit" | "help";
+    export type tiers = "Standard" | "Backer" | "Supporter" | "Sponser";
+    const Commands = ["top", "tag", "author", "random", "refresh", "detail", "illust", "credit", "help"] as const;
+    export type commands = typeof Commands[number];
+    export interface userMeta {
+        id: string,
+        identifyNum: string,
+        username: string,
+        avatar: string
+    }
     export interface user {
-        kookid: number,
+        kookid: string,
         kook: {
-            id: number,
+            id: string,
             username: string,
-            identityNum: number,
+            identifyNum: string,
             avatarLink: string,
         },
         pixiv: {
             tier: tiers,
             expire: number,
+            register: number,
+            quantum_pack_capacity: number,
             status: {
                 banned: boolean,
                 until?: number
+            },
+            statistics_today: {
+                command_requests_counter: {
+                    [trigger in commands]: number
+                },
+                new_illustration_requested: number,
+                total_illustration_requested: number,
             },
             statistics: {
                 last_seen_on: number,
@@ -51,8 +67,84 @@ export namespace users {
             save();
         }
     }
+    export function init(user: userMeta) {
+        users[user.id] = {
+            kookid: user.id,
+            kook: {
+                id: user.id,
+                username: user.username,
+                identifyNum: user.identifyNum,
+                avatarLink: user.avatar
+            },
+            pixiv: {
+                tier: "Standard",
+                expire: 0,
+                register: Date.now(),
+                quantum_pack_capacity: 0,
+                status: {
+                    banned: false
+                },
+                statistics_today: {
+                    command_requests_counter: {
+                        top: 0,
+                        tag: 0,
+                        author: 0,
+                        random: 0,
+                        refresh: 0,
+                        detail: 0,
+                        illust: 0,
+                        credit: 0,
+                        help: 0
+                    },
+                    new_illustration_requested: 0,
+                    total_illustration_requested: 0
+                },
+                statistics: {
+                    last_seen_on: 0,
+                    total_requests_counter: 0,
+                    command_requests_counter: {
+                        top: 0,
+                        tag: 0,
+                        author: 0,
+                        random: 0,
+                        refresh: 0,
+                        detail: 0,
+                        illust: 0,
+                        credit: 0,
+                        help: 0
+                    },
+                    new_illustration_requested: 0,
+                    total_illustration_requested: 0,
+                    keys_activated: 0,
+                    activated_key: []
+                }
+            }
+        }
+    }
+    export function resetDailyCounter() {
+        linkmap.logger.info("Reset daily counter");
+        for (const ky in users) {
+            users[ky].pixiv.statistics_today = {
+                command_requests_counter: {
+                    top: 0,
+                    tag: 0,
+                    author: 0,
+                    random: 0,
+                    refresh: 0,
+                    detail: 0,
+                    illust: 0,
+                    credit: 0,
+                    help: 0
+                },
+                new_illustration_requested: 0,
+                total_illustration_requested: 0
+            }
+        }
+        save();
+    }
     export function save() {
         fs.writeFileSync(upath.join(__dirname, "users.json"), JSON.stringify(users), { encoding: "utf-8", flag: "w" });
+        linkmap.logger.info("Saved user profiles");
     }
     export function update(update: user) {
         users = {
@@ -60,7 +152,11 @@ export namespace users {
             [update.kook.id]: update
         }
     }
-    export function detail(uid: string): user | false {
-        return users[uid];
+    export async function detail(uid: string): Promise<user> {
+        if (users[uid]) {
+            return users[uid];
+        } else {
+            throw { code: 40002, message: "User not found" };
+        }
     }
 }

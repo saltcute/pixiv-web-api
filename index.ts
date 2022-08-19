@@ -15,6 +15,15 @@ const cache = (duration: number) => {
         const key = '__express__' + req.originalUrl || req.url;
         const cachedBody = mcache.get(key);
         if (cachedBody) {
+            if (req.query.user && typeof req.query.user == 'string') {
+                const user = JSON.parse(req.query.user)
+                linkmap.logger.info(`CACHED ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+            } else if (req.body.user) {
+                const user = req.body.user;
+                linkmap.logger.info(`CACHED ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+            } else {
+                linkmap.logger.info(`CACHED ${req.path}`);
+            }
             res.send(cachedBody);
             return;
         } else {
@@ -37,6 +46,11 @@ keygen.load();
 linkmap.load();
 schedule.scheduleJob("30 * * * * ", () => {
     linkmap.save();
+    users.save;
+    keygen.save();
+})
+schedule.scheduleJob("0 4 * * * ", () => {
+    users.resetDailyCounter();
 })
 var job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
     refresh();
@@ -65,21 +79,36 @@ app.use(express.json({ limit: '50mb' }));
 /**
  * User
  */
-app.get('/user/profile', cache(30), (req, res) => {
+app.get('/user/profile', (req, res) => {
+    if (req.query.user && typeof req.query.user == 'string') {
+        const user = JSON.parse(req.query.user)
+        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`GET ${req.path}`);
+    }
     const uid = req.query.id;
     if (typeof uid == 'string' && !isNaN(parseInt(uid))) {
-        const profile = users.detail(uid);
-        if (profile) {
-            res.end(JSON.stringify(profile));
-        } else {
-            res.end(JSON.stringify({ "code": "40001", "message": "Cannot find the user profile of given ID." }));
-        }
+        users.detail(uid).then((profile) => {
+            res.end(JSON.stringify({ "code": "0", "message": "Success", "data": profile }));
+        }).catch(() => {
+            if (req.query.user && typeof req.query.user == 'string') {
+                users.init(JSON.parse(req.query.user))
+                users.detail(uid).then((profile) => {
+                    res.end(JSON.stringify({ "code": "0", "message": "Success", "data": profile }));
+                }).catch(() => {
+                    res.end(JSON.stringify({ "code": "40001", "message": "Cannot find the user profile of given ID." }));
+                })
+            } else {
+                res.end(JSON.stringify({ "code": "40001", "message": "Cannot find the user profile of given ID." }));
+            }
+        });
     } else {
         res.end(JSON.stringify({ "code": "40000", "message": "Wrong user ID." }));
     }
 
 });
 app.post('/user/profile/update', (req, res) => {
+    linkmap.logger.info(`POST ${req.path}`);
     if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
         const data: users.user = req.body;
         if (users.isUser(data)) {
@@ -94,15 +123,61 @@ app.post('/user/profile/update', (req, res) => {
         linkmap.logger.debug("Unauthrozied request for key status");
     }
 })
-app.post('/user/key/activate', (req, res) => {
+app.post('/user/key/activate', async (req, res) => {
+    if (req.body.user) {
+        const user = req.body.user;
+        linkmap.logger.info(`POST ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`POST ${req.path}`);
+    }
     if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
-        const data: keygen.keyObj = req.body.key;
-        const user: number = req.body.user;
-        if (keygen.validate(data.key)) {
-            const keyDetail = keygen.getDetail(data.key);
+        const key: string = req.body.key;
+        const uid: string = req.body.user.id;
+        if (keygen.validate(key)) {
+            const keyDetail = keygen.getDetail(key);
             if (!keyDetail.used && keyDetail.type != "invalid") {
-                keygen.activate(data.key, user, data.type);
-                res.end(JSON.stringify({ "code": "0", "message": "Activate success." }));
+                keygen.activate(keyDetail.key, uid, keyDetail.tier, keyDetail.type);
+                keygen.save();
+
+                users.detail(uid).catch((e) => {
+                    if (e.code == 40002) { // User not found
+                        if (req.body.user) {
+                            const user = req.body.user;
+                            users.init(user);
+                        } else {
+                            linkmap.logger.warn(e);
+                            return res.end(JSON.stringify(e));
+                        }
+                    } else {
+                        linkmap.logger.error(e);
+                    }
+                });
+                users.detail(uid).then((user) => {
+                    if (keyDetail.type == "sub") {
+                        const now = Date.now();
+                        if (user.pixiv.expire < Date.now()) user.pixiv.expire = now;
+                        const expireAfter = user.pixiv.expire - now;
+                        if (user.pixiv.tier == keyDetail.tier) {
+                            user.pixiv.expire = now + expireAfter + keygen.getMillsecFromPeriod(keyDetail.period);
+                        } else {
+                            if (keygen.getTierDifference(user.pixiv.tier, keyDetail.tier) > 1) { // Current tier is higher
+                                user.pixiv.expire = now + expireAfter + keygen.getMillsecFromPeriod(keyDetail.period) * keygen.getTierDifference(keyDetail.tier, user.pixiv.tier);
+                            } else { // Current tier is lower
+                                user.pixiv.expire = now + keygen.getMillsecFromPeriod(keyDetail.period) + expireAfter * keygen.getTierDifference(user.pixiv.tier, keyDetail.tier);
+                                user.pixiv.tier = keyDetail.tier;
+                            }
+                        }
+                    } else if (keyDetail.type == "quantum") {
+                        user.pixiv.quantum_pack_capacity += 500;
+                    }
+                    user.pixiv.statistics.keys_activated++;
+                    user.pixiv.statistics.activated_key.push(keyDetail);
+                    users.update(user);
+                    users.save();
+                }).catch((e) => {
+                    linkmap.logger.error(e);
+                });
+                res.end(JSON.stringify({ "code": "0", "message": "Activate success.", "data": keygen.getDetail(key) }));
             } else {
                 res.end(JSON.stringify({ "code": "40001", "message": "The key is already been used or does not exist." }));
             }
@@ -121,6 +196,7 @@ app.post('/user/key/activate', (req, res) => {
  */
 
 app.post('/linkmap/update', (req, res) => {
+    linkmap.logger.info(`POST ${req.path}`);
     if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
         res.end(JSON.stringify({ "code": "200", "message": "Success" }));
         for (const key in req.body) {
@@ -137,7 +213,13 @@ app.post('/linkmap/update', (req, res) => {
         linkmap.logger.debug("Linkmap updating Authorization failed");
     }
 })
-app.get('/linkmap/get', cache(60), (req, res) => {
+app.get('/linkmap', (req, res) => {
+    if (req.query.user && typeof req.query.user == 'string') {
+        const user = JSON.parse(req.query.user)
+        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`GET ${req.path}`);
+    }
     res.end(JSON.stringify(linkmap.map));
 })
 
@@ -146,6 +228,12 @@ app.get('/linkmap/get', cache(60), (req, res) => {
  */
 
 app.get('/illustration/recommend', cache(5), (req, res) => {
+    if (req.query.user && typeof req.query.user == 'string') {
+        const user = JSON.parse(req.query.user)
+        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`GET ${req.path}`);
+    }
     pixNode.fetch.recommendedIllustrations(auth, { contentType: "ILLUSTRATION", }, (rel, err) => {
         if (err) {
             res.send(err);
@@ -157,7 +245,12 @@ app.get('/illustration/recommend', cache(5), (req, res) => {
  * Get today's ranklist
  */
 app.get('/illustration/ranklist', cache(15 * 60), (req, res) => {
-
+    if (req.query.user && typeof req.query.user == 'string') {
+        const user = JSON.parse(req.query.user)
+        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`GET ${req.path}`);
+    }
     var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
     var duration: "DAY" | "WEEK" | "MONTH" | "DAY_MALE" | "DAY_FEMALE" | "WEEK_ORIGINAL" | "WEEK_ROOKIE" | "DAY_MANGA" | undefined
     if (dur == "DAY" || dur == "WEEK" || dur == "MONTH" || dur == "DAY_MALE" || dur == "DAY_FEMALE" || dur == "WEEK_ORIGINAL" || dur == "WEEK_ROOKIE" || dur == "DAY_MANGA") {
@@ -176,7 +269,12 @@ app.get('/illustration/ranklist', cache(15 * 60), (req, res) => {
  * Tag ranklist
  */
 app.get('/illustration/tag', cache(20 * 60), (req, res) => {
-
+    if (req.query.user && typeof req.query.user == 'string') {
+        const user = JSON.parse(req.query.user)
+        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`GET ${req.path}`);
+    }
     const offset = typeof req.query.offset === "string" ? parseInt(req.query.offset) : undefined;
     var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
     var duration: "LAST_DAY" | "LAST_WEEK" | "LAST_MONTH" | undefined;
@@ -210,6 +308,12 @@ app.get('/illustration/tag', cache(20 * 60), (req, res) => {
 })
 
 app.get("/illustration/detail", cache(30 * 60), (req, res) => {
+    if (req.query.user && typeof req.query.user == 'string') {
+        const user = JSON.parse(req.query.user)
+        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`GET ${req.path}`);
+    }
     var keyword = "";
     if (req.query.keyword === undefined) {
         res.send({
@@ -234,6 +338,12 @@ app.get("/illustration/detail", cache(30 * 60), (req, res) => {
 })
 
 app.get("/illustration/creator", cache(10 * 60), (req, res) => {
+    if (req.query.user && typeof req.query.user == 'string') {
+        const user = JSON.parse(req.query.user)
+        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`GET ${req.path}`);
+    }
     var keyword: number;
     if (req.query.keyword === undefined) {
         res.send({

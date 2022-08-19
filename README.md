@@ -19,20 +19,23 @@ npm start
 
 A web server will start running on port 8888, or modify it yourself in `index.ts`.
 
+`./generateKeys/` has an example of a key generator for Pixiv Chan.
+
 ## List of API (wiki WIP)
 
 ### Requires authorization
 
+`POST` `/linkmap/update`
 
 `POST` `/user/key/activate`
 
-`POST` `/linkmap/update`
+`POST` `/user/profile/update`
 
 ### Does not require authorization
 
-`GET` `/user/profile/`
+`GET` `/linkmap`
 
-`GET` `/linkmap/get`
+`GET` `/user/profile/`
 
 `GET` `/illustration/recommend`
 

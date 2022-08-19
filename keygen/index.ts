@@ -2,9 +2,11 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as upath from 'upath';
 import { linkmap } from '../linkmap';
+import { users } from '../users';
 
 export namespace keygen {
-    export type keyType = "day" | "month" | "season" | "year" | "invalid";
+    export type keyType = "sub" | "quantum" | "invalid"
+    export type keyTime = "day" | "month" | "season" | "year";
     export type keyLiteral = `${string}-${string}-${string}-${string}-${string}`;
     export interface keyMap {
         [key: string]: keyObj
@@ -12,11 +14,16 @@ export namespace keygen {
     export interface keyObj {
         key: keyLiteral,
         type: keyType,
+        tier: users.tiers
+        period: keyTime,
         used: boolean,
         redeem?: {
             time: number,
-            uid: number,
-            recieved: keyType
+            uid: string,
+            recieved: {
+                tier: users.tiers,
+                type: keyType
+            }
         }
     }
     const characters = "ABCDEFGHJKMNOPQRSTUWXYZ";
@@ -45,14 +52,13 @@ export namespace keygen {
         var validation = "";
         var key = `${keyPart[0]}-${keyPart[1]}-${keyPart[2]}-${keyPart[3]}-`
         for (var j = 1; j <= 5; j++) {
-            const hash = crypto.createHash('sha1').update(key).digest("base64");
+            const hash = crypto.createHash('sha1').update(key + validation).digest("base64");
             validation += characters.charAt(hash.charCodeAt(j) % characters.length);
         }
         return `${keyPart[0]}-${keyPart[1]}-${keyPart[2]}-${keyPart[3]}-${validation}`;
     }
     export function validate(key: string) {
         if (key.length != 29) return false;
-        const test = key.slice(24);
         var str = key.slice(0, 24);
         for (var j = 1; j <= 5; j++) {
             const hash = crypto.createHash('sha1').update(str).digest("base64");
@@ -67,31 +73,84 @@ export namespace keygen {
             return {
                 key: "AAAAA-AAAAA-AAAAA-AAAAA-AAAAA",
                 type: "invalid",
+                period: "year",
+                tier: "Standard",
                 used: false
             }
         }
     }
-    export function activate(key: string, uid: number, recieved: keyType) {
+    export function activate(key: string, uid: string, tier: users.tiers, type: keyType) {
         if (map[key]) {
             map[key].used = true;
             map[key].redeem = {
                 time: Date.now(),
                 uid: uid,
-                recieved: recieved
+                recieved: {
+                    tier: tier,
+                    type: type
+                }
             }
             save();
         }
     }
-    export function getkeyObj(quantity: number, type: keyType) {
+    export function generateKeyObj(quantity: number, tier: users.tiers, type: keyType, period: keyTime) {
         var keyList: keyMap = {};
         for (var l = 0; l < quantity; ++l) {
             const key = keygen.generate();
             keyList[key] = {
                 key: key,
                 type: type,
+                period: period,
+                tier: tier,
                 used: false
             }
         }
         return keyList;
+    }
+    export function getMillsecFromPeriod(type: keyTime) {
+        const day = 86400 * 1000, mth = day * 30, season = day * 91, year = day * 365;
+        switch (type) {
+            case "day":
+                return day;
+            case "month":
+                return mth;
+            case "season":
+                return season;
+            case "year":
+                return year;
+        }
+    }
+    export function getTierDifference(original: users.tiers, future: users.tiers) {
+        const mapping: {
+            [tiers in users.tiers]: {
+                [tiers in users.tiers]: number
+            }
+        } = {
+            "Standard": {
+                "Standard": 0,
+                "Backer": 1,
+                "Supporter": 1,
+                "Sponser": 1,
+            },
+            "Backer": {
+                "Standard": 0,
+                "Backer": 1,
+                "Supporter": 0.33,
+                "Sponser": 0.07,
+            },
+            "Supporter": {
+                "Standard": 0,
+                "Backer": 3,
+                "Supporter": 1,
+                "Sponser": 0.22,
+            },
+            "Sponser": {
+                "Standard": 0,
+                "Backer": 14,
+                "Supporter": 1,
+                "Sponser": 4.67,
+            }
+        }
+        return mapping[original][future];
     }
 }
