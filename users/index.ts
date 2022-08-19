@@ -5,6 +5,7 @@ import { keygen } from '../keygen';
 import { linkmap } from '../linkmap';
 
 export namespace users {
+    export const quantumCapacityPerPack = 1000;
     export type tiers = "Standard" | "Backer" | "Supporter" | "Sponser";
     const Commands = ["top", "tag", "author", "random", "refresh", "detail", "illust", "credit", "help"] as const;
     export type commands = typeof Commands[number];

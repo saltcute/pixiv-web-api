@@ -168,7 +168,7 @@ app.post('/user/key/activate', async (req, res) => {
                             }
                         }
                     } else if (keyDetail.type == "quantum") {
-                        user.pixiv.quantum_pack_capacity += 500;
+                        user.pixiv.quantum_pack_capacity += users.quantumCapacityPerPack;
                     }
                     user.pixiv.statistics.keys_activated++;
                     user.pixiv.statistics.activated_key.push(keyDetail);
