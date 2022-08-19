@@ -136,9 +136,6 @@ app.post('/user/key/activate', async (req, res) => {
         if (keygen.validate(key)) {
             const keyDetail = keygen.getDetail(key);
             if (!keyDetail.used && keyDetail.type != "invalid") {
-                keygen.activate(keyDetail.key, uid, keyDetail.tier, keyDetail.type);
-                keygen.save();
-
                 users.detail(uid).catch((e) => {
                     if (e.code == 40002) { // User not found
                         if (req.body.user) {
@@ -174,6 +171,8 @@ app.post('/user/key/activate', async (req, res) => {
                     user.pixiv.statistics.activated_key.push(keyDetail);
                     users.update(user);
                     users.save();
+                    keygen.activate(keyDetail.key, uid, keyDetail.tier, keyDetail.type);
+                    keygen.save();
                 }).catch((e) => {
                     linkmap.logger.error(e);
                 });
