@@ -17,12 +17,7 @@ export namespace users {
     }
     export interface user {
         kookid: string,
-        kook: {
-            id: string,
-            username: string,
-            identifyNum: string,
-            avatarLink: string,
-        },
+        kook: userMeta,
         pixiv: {
             tier: tiers,
             expire: number,
@@ -71,12 +66,7 @@ export namespace users {
     export function init(user: userMeta) {
         users[user.id] = {
             kookid: user.id,
-            kook: {
-                id: user.id,
-                username: user.username,
-                identifyNum: user.identifyNum,
-                avatarLink: user.avatar
-            },
+            kook: user,
             pixiv: {
                 tier: "Standard",
                 expire: 0,

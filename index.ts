@@ -77,6 +77,16 @@ if (auth.refresh_token == undefined) {
 app.use(express.json({ limit: '50mb' }));
 
 /**
+ * Admin
+ */
+app.get('/manage/save', (req, res) => {
+    linkmap.save();
+    users.save;
+    keygen.save();
+    res.end(JSON.stringify({ "code": "0", "message": "Success" }));
+})
+
+/**
  * User
  */
 app.get('/user/profile', (req, res) => {
