@@ -44,7 +44,7 @@ pixNode.common.setLanguage("zh-cn");
 users.load();
 keygen.load();
 linkmap.load();
-schedule.scheduleJob("30 * * * * ", () => {
+schedule.scheduleJob("0,15,30,45 * * * * ", () => {
     linkmap.save();
     users.save;
     keygen.save();
