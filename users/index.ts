@@ -64,6 +64,7 @@ export namespace users {
         }
     }
     export function init(user: userMeta) {
+        linkmap.logger.info(`Initialize profile for ${user.username}$${user.identifyNum} (${user.id})`);
         users[user.id] = {
             kookid: user.id,
             kook: user,

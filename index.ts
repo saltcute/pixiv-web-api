@@ -46,7 +46,7 @@ keygen.load();
 linkmap.load();
 schedule.scheduleJob("0,15,30,45 * * * * ", () => {
     linkmap.save();
-    users.save;
+    users.save();
     keygen.save();
 })
 schedule.scheduleJob("0 4 * * * ", () => {
@@ -146,8 +146,8 @@ app.post('/user/key/activate', async (req, res) => {
         if (keygen.validate(key)) {
             const keyDetail = keygen.getDetail(key);
             if (!keyDetail.used && keyDetail.type != "invalid") {
-                users.detail(uid).catch((e) => {
-                    if (e.code == 40002) { // User not found
+                await users.detail(uid).catch((e) => {
+                    if (e.code == "40002") { // User not found
                         if (req.body.user) {
                             const user = req.body.user;
                             users.init(user);
@@ -159,7 +159,7 @@ app.post('/user/key/activate', async (req, res) => {
                         linkmap.logger.error(e);
                     }
                 });
-                users.detail(uid).then((user) => {
+                await users.detail(uid).then((user) => {
                     if (keyDetail.type == "sub") {
                         const now = Date.now();
                         if (user.pixiv.expire < Date.now()) user.pixiv.expire = now;
