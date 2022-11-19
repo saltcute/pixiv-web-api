@@ -1,6 +1,5 @@
 import express = require('express');
 const app = express();
-const port = 8888;
 import * as pixNode from 'pixnode';
 import fs = require('fs');
 import { linkmap } from './linkmap';
@@ -375,6 +374,11 @@ app.get("/illustration/creator", cache(10 * 60), (req, res) => {
         } else res.send(rel);
     })
 })
+
+var port = 9999;
+if (process.env.PORT && !isNaN(parseInt(process.env.PORT))) {
+    port = parseInt(process.env.PORT);
+}
 
 app.listen(port, () => {
     linkmap.logger.info(`Server start listening on port ${port}`);
