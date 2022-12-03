@@ -3,9 +3,9 @@ test/
 package-lock.json
 config/config.ts
 config/auth.json
-linkmap/map.json
-keygen/key.json
-users/users.json
+config/map.json
+config/key.json
+config/users.json
 yarn.lock
 *.js
 generateKeys/results/
