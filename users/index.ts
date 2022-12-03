@@ -146,6 +146,10 @@ export namespace users {
     }
     export async function detail(uid: string): Promise<user> {
         if (users[uid]) {
+            if (users[uid].pixiv.expire < Date.now()) {// Check membership expiry
+                users[uid].pixiv.expire = 0;
+                users[uid].pixiv.tier = "Standard";
+            }
             return users[uid];
         } else {
             throw { code: 40002, message: "User not found" };
