@@ -58,16 +58,22 @@ if (auth.expire_time - 60 < Math.round(Date.now())) {
     refresh();
 }
 function refresh() {
-    pixNode.authenticate.refresh(auth.refresh_token, (res, err) => {
-        if (err) console.error(err);
+    pixNode.authenticate.refresh(auth.refresh_token).then((res) => {
         auth = res;
         fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
         linkmap.logger.info("Token refreshed");
-        job.cancel();
-        job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
-            refresh();
-        })
-    });
+        try {
+            job.cancel();
+            job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
+                refresh();
+            })
+        } catch (err) {
+            linkmap.logger.error("Setting next refresh job failed");
+            linkmap.logger.error(err);
+        }
+    }).catch((err) => {
+        linkmap.logger.error(err);
+    })
 }
 if (auth.refresh_token == undefined) {
     throw `LoginError: run "npm login" first`;
@@ -82,7 +88,7 @@ app.get('/manage/save', (req, res) => {
     linkmap.save();
     users.save;
     keygen.save();
-    res.end(JSON.stringify({ "code": "0", "message": "Success" }));
+    res.send({ "code": "0", "message": "Success" });
 })
 
 /**
@@ -98,21 +104,21 @@ app.get('/user/profile', (req, res) => {
     const uid = req.query.id;
     if (typeof uid == 'string' && !isNaN(parseInt(uid))) {
         users.detail(uid).then((profile) => {
-            res.end(JSON.stringify({ "code": "0", "message": "Success", "data": profile }));
+            res.send({ "code": "0", "message": "Success", "data": profile });
         }).catch(() => {
             if (req.query.user && typeof req.query.user == 'string') {
                 users.init(JSON.parse(req.query.user))
                 users.detail(uid).then((profile) => {
-                    res.end(JSON.stringify({ "code": "0", "message": "Success", "data": profile }));
+                    res.send({ "code": "0", "message": "Success", "data": profile });
                 }).catch(() => {
-                    res.end(JSON.stringify({ "code": "40001", "message": "Cannot find the user profile of given ID." }));
+                    res.send({ "code": "40001", "message": "Cannot find the user profile of given ID." });
                 })
             } else {
-                res.end(JSON.stringify({ "code": "40001", "message": "Cannot find the user profile of given ID." }));
+                res.send({ "code": "40001", "message": "Cannot find the user profile of given ID." });
             }
         });
     } else {
-        res.end(JSON.stringify({ "code": "40000", "message": "Wrong user ID." }));
+        res.send({ "code": "40000", "message": "Wrong user ID." });
     }
 
 });
@@ -122,13 +128,13 @@ app.post('/user/profile/update', (req, res) => {
         const data: users.user = req.body;
         if (users.isUser(data)) {
             users.update(data);
-            res.end(JSON.stringify({ "code": "0", "message": "Update success." }));
+            res.send({ "code": "0", "message": "Update success." });
         } else {
-            res.end(JSON.stringify({ "code": "40000", "message": "Wrong user format." }));
+            res.send({ "code": "40000", "message": "Wrong user format." });
         }
     } else {
         res.status(401);
-        res.end(JSON.stringify({ "code": "401", "message": "Authorization failed" }));
+        res.send({ "code": "401", "message": "Authorization failed" });
         linkmap.logger.debug("Unauthrozied request for key status");
     }
 })
@@ -152,7 +158,7 @@ app.post('/user/key/activate', async (req, res) => {
                             users.init(user);
                         } else {
                             linkmap.logger.warn(e);
-                            return res.end(JSON.stringify(e));
+                            return res.send(e);
                         }
                     } else {
                         linkmap.logger.error(e);
@@ -185,16 +191,16 @@ app.post('/user/key/activate', async (req, res) => {
                 }).catch((e) => {
                     linkmap.logger.error(e);
                 });
-                res.end(JSON.stringify({ "code": "0", "message": "Activate success.", "data": keygen.getDetail(key) }));
+                res.send({ "code": "0", "message": "Activate success.", "data": keygen.getDetail(key) });
             } else {
-                res.end(JSON.stringify({ "code": "40001", "message": "The key is already been used or does not exist." }));
+                res.send({ "code": "40001", "message": "The key is already been used or does not exist." });
             }
         } else {
-            res.end(JSON.stringify({ "code": "40000", "message": "Illegal key." }));
+            res.send({ "code": "40000", "message": "Illegal key." });
         }
     } else {
         res.status(401);
-        res.end(JSON.stringify({ "code": "401", "message": "Authorization failed" }));
+        res.send({ "code": "401", "message": "Authorization failed" });
         linkmap.logger.debug("Unauthrozied request for key status");
     }
 })
@@ -206,7 +212,7 @@ app.post('/user/key/activate', async (req, res) => {
 app.post('/linkmap/update', (req, res) => {
     linkmap.logger.info(`POST ${req.path}`);
     if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
-        res.end(JSON.stringify({ "code": "200", "message": "Success" }));
+        res.send({ "code": "200", "message": "Success" });
         for (const key in req.body) {
             for (const page in req.body[key]) {
                 linkmap.addMap(key, page, req.body[key][page].kookLink, req.body[key][page].NSFWResult)
@@ -217,7 +223,7 @@ app.post('/linkmap/update', (req, res) => {
         linkmap.logger.trace(req.body)
     } else {
         res.status(401);
-        res.end(JSON.stringify({ "code": "401", "message": "Authorization failed" }));
+        res.send({ "code": "401", "message": "Authorization failed" });
         linkmap.logger.debug("Linkmap updating Authorization failed");
     }
 })
@@ -228,7 +234,7 @@ app.get('/linkmap', (req, res) => {
     } else {
         linkmap.logger.info(`GET ${req.path}`);
     }
-    res.end(JSON.stringify(linkmap.map));
+    res.send(linkmap.map);
 })
 
 /**
@@ -242,10 +248,10 @@ app.get('/illustration/recommend', cache(5), (req, res) => {
     } else {
         linkmap.logger.info(`GET ${req.path}`);
     }
-    pixNode.fetch.recommendedIllustrations(auth, { contentType: "ILLUSTRATION", }, (rel, err) => {
-        if (err) {
-            res.send(err);
-        } else res.send(rel);
+    pixNode.fetch.recommendedIllustrations(auth, { contentType: "ILLUSTRATION", }).then((data) => {
+        res.send(data);
+    }).catch((err) => {
+        res.send(err);
     })
 });
 
@@ -266,10 +272,10 @@ app.get('/illustration/ranklist', cache(15 * 60), (req, res) => {
     } else {
         duration = "WEEK";
     }
-    pixNode.fetch.illustrationRanking(auth, { mode: duration }, (rel, err) => {
-        if (err) {
-            res.send(err);
-        } else res.send(rel);
+    pixNode.fetch.illustrationRanking(auth, { mode: duration }).then((data) => {
+        res.send(data);
+    }).catch((err) => {
+        res.send(err);
     })
 })
 
@@ -308,10 +314,10 @@ app.get('/illustration/tag', cache(20 * 60), (req, res) => {
         return;
     }
 
-    pixNode.fetch.searchForIllustration(auth, keyword, { duration: duration, offset: offset, sort: "MALE_DESC" }, (rel, err) => {
-        if (err) {
-            res.send(err);
-        } else res.send(rel);
+    pixNode.fetch.searchForIllustration(auth, keyword, { duration: duration, offset: offset, sort: "MALE_DESC" }).then((data) => {
+        res.send(data);
+    }).catch((err) => {
+        res.send(err);
     })
 })
 
@@ -322,7 +328,7 @@ app.get("/illustration/detail", cache(30 * 60), (req, res) => {
     } else {
         linkmap.logger.info(`GET ${req.path}`);
     }
-    var keyword = "";
+    var keyword = -1;
     if (req.query.keyword === undefined) {
         res.send({
             code: 400,
@@ -330,7 +336,7 @@ app.get("/illustration/detail", cache(30 * 60), (req, res) => {
         });
         return;
     } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
-        keyword = req.query.keyword;
+        keyword = parseInt(req.query.keyword);
     } else {
         res.send({
             code: 400,
@@ -338,10 +344,10 @@ app.get("/illustration/detail", cache(30 * 60), (req, res) => {
         });
         return;
     }
-    pixNode.fetch.illustration(auth, keyword, (rel, err) => {
-        if (err) {
-            res.send(err);
-        } else res.send(rel);
+    pixNode.fetch.illustration(auth, keyword).then((data) => {
+        res.send(data);
+    }).catch((err) => {
+        res.send(err);
     })
 })
 
@@ -368,10 +374,10 @@ app.get("/illustration/creator", cache(10 * 60), (req, res) => {
         });
         return;
     }
-    pixNode.fetch.userIllustrations(auth, keyword, { contentType: "ILLUSTRATION" }, (rel, err) => {
-        if (err) {
-            res.send(err);
-        } else res.send(rel);
+    pixNode.fetch.userIllustrations(auth, keyword, { contentType: "ILLUSTRATION" }).then((data) => {
+        res.send(data);
+    }).catch((err) => {
+        res.send(err);
     })
 })
 
