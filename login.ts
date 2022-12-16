@@ -1,7 +1,11 @@
 import * as pixNode from 'pixnode';
 import * as fs from 'fs';
+import { linkmap } from './linkmap';
 
-pixNode.authenticate.login((res, err) => {
-    if (err) throw err;
-    fs.writeFileSync("./config/auth.json", JSON.stringify(res));
-})
+pixNode.authenticate.login()
+    .then((res) => {
+        fs.writeFileSync("./config/auth.json", JSON.stringify(res));
+    })
+    .catch((err) => {
+        linkmap.logger.fatal(err);
+    })
