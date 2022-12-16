@@ -36,8 +36,12 @@ const cache = (duration: number) => {
     }
 }
 
-
-var auth = JSON.parse(fs.readFileSync("./config/auth.json", { encoding: 'utf-8', flag: 'r' }));
+try {
+    var auth = JSON.parse(fs.readFileSync("./config/auth.json", { encoding: 'utf-8', flag: 'r' }));
+} catch (err) {
+    linkmap.logger.fatal("Cannot find authorization credentials, Please run \"npm run login\" first.");
+    process.exit();
+}
 pixNode.common.setLanguage("zh-cn");
 
 users.load();
