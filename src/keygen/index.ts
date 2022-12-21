@@ -29,8 +29,8 @@ export namespace keygen {
     const characters = "ABCDEFGHJKMNOPQRSTUWXYZ";
     var map: keyMap = {};
     export function load() {
-        if (fs.existsSync("config/key.json")) {
-            map = JSON.parse(fs.readFileSync("config/key.json", { encoding: "utf-8", flag: "r" }));
+        if (fs.existsSync(upath.join(__dirname, "..", "/config/key.json"))) {
+            map = JSON.parse(fs.readFileSync(upath.join(__dirname, "..", "/config/key.json"), { encoding: "utf-8", flag: "r" }));
             linkmap.logger.info("Loaded key list.");
         } else {
             map = {};
@@ -38,7 +38,7 @@ export namespace keygen {
         }
     }
     export function save() {
-        fs.writeFileSync("config/key.json", JSON.stringify(map), { encoding: "utf-8", flag: "w" });
+        fs.writeFileSync(upath.join(__dirname, "..", "/config/key.json"), JSON.stringify(map), { encoding: "utf-8", flag: "w" });
     }
     export function generate(): keyLiteral {
         var keyPart = [];

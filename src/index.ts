@@ -8,6 +8,7 @@ import schedule from 'node-schedule';
 import mcache from 'memory-cache';
 import { keygen } from './keygen';
 import { users } from './users';
+import upath from 'upath';
 
 const cache = (duration: number) => {
     return (req: any, res: any, next: any) => {
@@ -37,7 +38,7 @@ const cache = (duration: number) => {
 }
 
 try {
-    var auth = JSON.parse(fs.readFileSync("./config/auth.json", { encoding: 'utf-8', flag: 'r' }));
+    var auth = JSON.parse(fs.readFileSync(upath.join(__dirname, "/config/auth.json"), { encoding: 'utf-8', flag: 'r' }));
 } catch (err) {
     linkmap.logger.fatal("Cannot find authorization credentials, Please run \"npm run login\" first.");
     process.exit();
@@ -64,7 +65,7 @@ if (auth.expire_time - 60 < Math.round(Date.now())) {
 function refresh() {
     pixNode.authenticate.refresh(auth.refresh_token).then((res) => {
         auth = res;
-        fs.writeFileSync("./config/auth.json", JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
+        fs.writeFileSync(upath.join(__dirname, "/config/auth.json"), JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
         linkmap.logger.info("Token refreshed");
         try {
             job.cancel();

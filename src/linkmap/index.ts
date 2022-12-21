@@ -1,7 +1,6 @@
 import fs from 'fs';
 import upath from 'upath';
 import bunyan from 'bunyan';
-
 export namespace linkmap {
     export const logger = bunyan.createLogger({
         name: "pixiv-web-api",
@@ -45,8 +44,8 @@ export namespace linkmap {
         }
     }
     export function load(): void {
-        if (fs.existsSync("config/map.json")) {
-            map = JSON.parse(fs.readFileSync("config/map.json", { encoding: "utf-8", flag: "r" }));
+        if (fs.existsSync(upath.join(__dirname, "..", "/config/map.json"))) {
+            map = JSON.parse(fs.readFileSync(upath.join(__dirname, "..", "/config/map.json"), { encoding: "utf-8", flag: "r" }));
             logger.info(`Loaded linkmap`);
         } else {
             map = {};
@@ -116,7 +115,7 @@ export namespace linkmap {
     }
 
     export function save() {
-        fs.writeFile("config/map.json", JSON.stringify(map), (err) => {
+        fs.writeFile(upath.join(__dirname, "..", "/config/map.json"), JSON.stringify(map), (err) => {
             if (err) {
                 logger.warn(`Saving linkmap failed, error message: `);
                 logger.warn(err);

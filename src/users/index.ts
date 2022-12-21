@@ -54,8 +54,8 @@ export namespace users {
         [uid: string]: user
     } = {};
     export function load() {
-        if (fs.existsSync("config/users.json")) {
-            users = JSON.parse(fs.readFileSync("config/users.json", { encoding: "utf-8", flag: "r" }));
+        if (fs.existsSync(upath.join(__dirname, "..", "/config/users.json"))) {
+            users = JSON.parse(fs.readFileSync(upath.join(__dirname, "..", "/config/users.json"), { encoding: "utf-8", flag: "r" }));
             linkmap.logger.info("Loaded user list.");
         } else {
             users = {};
@@ -135,7 +135,7 @@ export namespace users {
         save();
     }
     export function save() {
-        fs.writeFileSync("config/users.json", JSON.stringify(users), { encoding: "utf-8", flag: "w" });
+        fs.writeFileSync(upath.join(__dirname, "..", "/config/users.json"), JSON.stringify(users), { encoding: "utf-8", flag: "w" });
         linkmap.logger.info("Saved user profiles");
     }
     export function update(update: user) {
