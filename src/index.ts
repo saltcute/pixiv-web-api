@@ -1,7 +1,7 @@
-import express = require('express');
+import express from 'express';
 const app = express();
 import * as pixNode from 'pixnode';
-import fs = require('fs');
+import * as fs from 'fs';
 import { linkmap } from './linkmap';
 import config from './config/config';
 import schedule from 'node-schedule';
@@ -244,6 +244,36 @@ app.get('/linkmap', (req, res) => {
 /**
  * Illustrations
  */
+
+app.get('/illustration/related', cache(15 * 60), (req, res) => {
+    if (req.query.user && typeof req.query.user == 'string') {
+        const user = JSON.parse(req.query.user)
+        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+    } else {
+        linkmap.logger.info(`GET ${req.path}`);
+    }
+    var keyword = -1;
+    if (req.query.keyword === undefined) {
+        res.send({
+            code: 400,
+            response: { message: "Please specificate the illustration ID." }
+        });
+        return;
+    } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
+        keyword = parseInt(req.query.keyword);
+    } else {
+        res.send({
+            code: 400,
+            response: { message: `Please specificate a valid illustration ID (Recieved ${req.query.keyword})` }
+        });
+        return;
+    }
+    pixNode.fetch.relatedIllustrations(auth, keyword, {}).then((data) => {
+        res.send(data);
+    }).catch((err) => {
+        res.send(err);
+    });
+});
 
 app.get('/illustration/recommend', cache(5), (req, res) => {
     if (req.query.user && typeof req.query.user == 'string') {

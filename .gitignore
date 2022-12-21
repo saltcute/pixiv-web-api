@@ -1,11 +1,12 @@
 node_modules/
 test/
+dist/*
 package-lock.json
-config/config.ts
-config/auth.json
-config/map.json
-config/key.json
-config/users.json
+config.ts
+auth.json
+map.json
+key.json
+users.json
 yarn.lock
 *.js
 generateKeys/results/
