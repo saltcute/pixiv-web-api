@@ -68,7 +68,7 @@ function refresh() {
         fs.writeFileSync(upath.join(__dirname, "/config/auth.json"), JSON.stringify(auth), { encoding: 'utf-8', flag: 'w' });
         linkmap.logger.info("Token refreshed");
         try {
-            job.cancel();
+            job?.cancel();
             job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
                 refresh();
             })
@@ -255,6 +255,7 @@ app.get('/illustration/related', cache(15 * 60), (req, res) => {
     }
     var keyword = -1;
     if (req.query.keyword === undefined) {
+        res.status(400);
         res.send({
             code: 400,
             response: { message: "Please specificate the illustration ID." }
@@ -263,6 +264,7 @@ app.get('/illustration/related', cache(15 * 60), (req, res) => {
     } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
         keyword = parseInt(req.query.keyword);
     } else {
+        res.status(400);
         res.send({
             code: 400,
             response: { message: `Please specificate a valid illustration ID (Recieved ${req.query.keyword})` }
@@ -272,7 +274,12 @@ app.get('/illustration/related', cache(15 * 60), (req, res) => {
     pixNode.fetch.relatedIllustrations(auth, keyword, {}).then((data) => {
         res.send(data);
     }).catch((err) => {
-        res.send(err);
+        res.status(err.response.status);
+        res.send({
+            code: err.response.status,
+            message: err.response.statusText,
+            data: err.response.data
+        });
     });
 });
 
@@ -286,7 +293,12 @@ app.get('/illustration/recommend', cache(5), (req, res) => {
     pixNode.fetch.recommendedIllustrations(auth, { contentType: "ILLUSTRATION", }).then((data) => {
         res.send(data);
     }).catch((err) => {
-        res.send(err);
+        res.status(err.response.status);
+        res.send({
+            code: err.response.status,
+            message: err.response.statusText,
+            data: err.response.data
+        });
     })
 });
 
@@ -310,7 +322,12 @@ app.get('/illustration/ranklist', cache(15 * 60), (req, res) => {
     pixNode.fetch.illustrationRanking(auth, { mode: duration }).then((data) => {
         res.send(data);
     }).catch((err) => {
-        res.send(err);
+        res.status(err.response.status);
+        res.send({
+            code: err.response.status,
+            message: err.response.statusText,
+            data: err.response.data
+        });
     })
 })
 
@@ -334,6 +351,7 @@ app.get('/illustration/tag', cache(20 * 60), (req, res) => {
     }
     var keyword = "";
     if (req.query.keyword === undefined) {
+        res.status(400);
         res.send({
             code: 400,
             response: { message: "Please specificate a keyword." }
@@ -342,6 +360,7 @@ app.get('/illustration/tag', cache(20 * 60), (req, res) => {
     } else if (typeof req.query.keyword == "string") {
         keyword = req.query.keyword;
     } else {
+        res.status(400);
         res.send({
             code: 400,
             response: { message: `Please specificate a valid keyword (Recieved ${req.query.keyword}).` }
@@ -352,7 +371,12 @@ app.get('/illustration/tag', cache(20 * 60), (req, res) => {
     pixNode.fetch.searchForIllustration(auth, keyword, { duration: duration, offset: offset, sort: "MALE_DESC" }).then((data) => {
         res.send(data);
     }).catch((err) => {
-        res.send(err);
+        res.status(err.response.status);
+        res.send({
+            code: err.response.status,
+            message: err.response.statusText,
+            data: err.response.data
+        });
     })
 })
 
@@ -365,6 +389,7 @@ app.get("/illustration/detail", cache(30 * 60), (req, res) => {
     }
     var keyword = -1;
     if (req.query.keyword === undefined) {
+        res.status(400);
         res.send({
             code: 400,
             response: { message: "Please specificate the illustration ID." }
@@ -373,6 +398,7 @@ app.get("/illustration/detail", cache(30 * 60), (req, res) => {
     } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
         keyword = parseInt(req.query.keyword);
     } else {
+        res.status(400);
         res.send({
             code: 400,
             response: { message: `Please specificate a valid illustration ID (Recieved ${req.query.keyword})` }
@@ -382,7 +408,12 @@ app.get("/illustration/detail", cache(30 * 60), (req, res) => {
     pixNode.fetch.illustration(auth, keyword).then((data) => {
         res.send(data);
     }).catch((err) => {
-        res.send(err);
+        res.status(err.response.status);
+        res.send({
+            code: err.response.status,
+            message: err.response.statusText,
+            data: err.response.data
+        });
     })
 })
 
@@ -395,6 +426,7 @@ app.get("/illustration/creator", cache(10 * 60), (req, res) => {
     }
     var keyword: number;
     if (req.query.keyword === undefined) {
+        res.status(400);
         res.send({
             code: 400,
             response: { message: "Please specificate the user ID." }
@@ -403,6 +435,7 @@ app.get("/illustration/creator", cache(10 * 60), (req, res) => {
     } else if (typeof req.query.keyword == "string" && isNaN(parseInt(req.query.keyword)) == false) {
         keyword = parseInt(req.query.keyword);
     } else {
+        res.status(400);
         res.send({
             code: 400,
             response: { message: `Please specificate a valid user ID (Recieved ${req.query.keyword}).` }
@@ -412,7 +445,12 @@ app.get("/illustration/creator", cache(10 * 60), (req, res) => {
     pixNode.fetch.userIllustrations(auth, keyword, { contentType: "ILLUSTRATION" }).then((data) => {
         res.send(data);
     }).catch((err) => {
-        res.send(err);
+        res.status(err.response.status);
+        res.send({
+            code: err.response.status,
+            message: err.response.statusText,
+            data: err.response.data
+        });
     })
 })
 
