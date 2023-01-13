@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 const app = express();
 import * as pixNode from 'pixnode';
 import * as fs from 'fs';
@@ -34,6 +34,21 @@ const cache = (duration: number) => {
             }
             next()
         }
+    }
+}
+
+function logAccess() {
+    return (req: Request, res: Response, next: Function) => {
+        if (req.query.user && typeof req.query.user == 'string') {
+            const user = JSON.parse(req.query.user)
+            linkmap.logger.info(`${req.method} ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+        } else if (req.body.user) {
+            const user = req.body.user;
+            linkmap.logger.info(`${req.method} ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+        } else {
+            linkmap.logger.info(`${req.method} ${req.path}`);
+        }
+        next();
     }
 }
 
@@ -81,7 +96,7 @@ function refresh() {
     })
 }
 if (auth.refresh_token == undefined) {
-    throw `LoginError: run "npm login" first`;
+    throw `LoginError: run "npm run login" first`;
 }
 
 app.use(express.json({ limit: '50mb' }));
@@ -99,13 +114,7 @@ app.get('/manage/save', (req, res) => {
 /**
  * User
  */
-app.get('/user/profile', (req, res) => {
-    if (req.query.user && typeof req.query.user == 'string') {
-        const user = JSON.parse(req.query.user)
-        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
-    } else {
-        linkmap.logger.info(`GET ${req.path}`);
-    }
+app.get('/user/profile', logAccess(), (req, res) => {
     const uid = req.query.id;
     if (typeof uid == 'string' && !isNaN(parseInt(uid))) {
         users.detail(uid).then((profile) => {
@@ -143,13 +152,8 @@ app.post('/user/profile/update', (req, res) => {
         linkmap.logger.debug("Unauthrozied request for key status");
     }
 })
-app.post('/user/key/activate', async (req, res) => {
-    if (req.body.user) {
-        const user = req.body.user;
-        linkmap.logger.info(`POST ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
-    } else {
-        linkmap.logger.info(`POST ${req.path}`);
-    }
+app.post('/user/key/activate', logAccess(), async (req, res) => {
+
     if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
         const key: string = req.body.key;
         const uid: string = req.body.user.id;
@@ -232,13 +236,7 @@ app.post('/linkmap/update', (req, res) => {
         linkmap.logger.debug("Linkmap updating Authorization failed");
     }
 })
-app.get('/linkmap', (req, res) => {
-    if (req.query.user && typeof req.query.user == 'string') {
-        const user = JSON.parse(req.query.user)
-        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
-    } else {
-        linkmap.logger.info(`GET ${req.path}`);
-    }
+app.get('/linkmap', logAccess(), cache(1), (req, res) => {
     res.send(linkmap.map);
 })
 
@@ -246,13 +244,7 @@ app.get('/linkmap', (req, res) => {
  * Illustrations
  */
 
-app.get('/illustration/related', cache(15 * 60), (req, res) => {
-    if (req.query.user && typeof req.query.user == 'string') {
-        const user = JSON.parse(req.query.user)
-        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
-    } else {
-        linkmap.logger.info(`GET ${req.path}`);
-    }
+app.get('/illustration/related', logAccess(), cache(15 * 60), (req, res) => {
     var keyword = -1;
     if (req.query.keyword === undefined) {
         res.status(400);
@@ -283,13 +275,7 @@ app.get('/illustration/related', cache(15 * 60), (req, res) => {
     });
 });
 
-app.get('/illustration/recommend', cache(5), (req, res) => {
-    if (req.query.user && typeof req.query.user == 'string') {
-        const user = JSON.parse(req.query.user)
-        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
-    } else {
-        linkmap.logger.info(`GET ${req.path}`);
-    }
+app.get('/illustration/recommend', logAccess(), cache(1), (req, res) => {
     pixNode.fetch.recommendedIllustrations(auth, { contentType: "ILLUSTRATION", }).then((data) => {
         res.send(data);
     }).catch((err) => {
@@ -305,13 +291,7 @@ app.get('/illustration/recommend', cache(5), (req, res) => {
 /**
  * Get today's ranklist
  */
-app.get('/illustration/ranklist', cache(15 * 60), (req, res) => {
-    if (req.query.user && typeof req.query.user == 'string') {
-        const user = JSON.parse(req.query.user)
-        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
-    } else {
-        linkmap.logger.info(`GET ${req.path}`);
-    }
+app.get('/illustration/ranklist', logAccess(), cache(15 * 60), (req, res) => {
     var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
     var duration: "DAY" | "WEEK" | "MONTH" | "DAY_MALE" | "DAY_FEMALE" | "WEEK_ORIGINAL" | "WEEK_ROOKIE" | "DAY_MANGA" | undefined
     if (dur == "DAY" || dur == "WEEK" || dur == "MONTH" || dur == "DAY_MALE" || dur == "DAY_FEMALE" || dur == "WEEK_ORIGINAL" || dur == "WEEK_ROOKIE" || dur == "DAY_MANGA") {
@@ -334,13 +314,7 @@ app.get('/illustration/ranklist', cache(15 * 60), (req, res) => {
 /**
  * Tag ranklist
  */
-app.get('/illustration/tag', cache(20 * 60), (req, res) => {
-    if (req.query.user && typeof req.query.user == 'string') {
-        const user = JSON.parse(req.query.user)
-        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
-    } else {
-        linkmap.logger.info(`GET ${req.path}`);
-    }
+app.get('/illustration/tag', logAccess(), cache(20 * 60), (req, res) => {
     const offset = typeof req.query.offset === "string" ? parseInt(req.query.offset) : undefined;
     var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
     var duration: "LAST_DAY" | "LAST_WEEK" | "LAST_MONTH" | undefined;
@@ -380,13 +354,7 @@ app.get('/illustration/tag', cache(20 * 60), (req, res) => {
     })
 })
 
-app.get("/illustration/detail", cache(30 * 60), (req, res) => {
-    if (req.query.user && typeof req.query.user == 'string') {
-        const user = JSON.parse(req.query.user)
-        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
-    } else {
-        linkmap.logger.info(`GET ${req.path}`);
-    }
+app.get("/illustration/detail", logAccess(), cache(30 * 60), (req, res) => {
     var keyword = -1;
     if (req.query.keyword === undefined) {
         res.status(400);
@@ -417,13 +385,28 @@ app.get("/illustration/detail", cache(30 * 60), (req, res) => {
     })
 })
 
-app.get("/illustration/creator", cache(10 * 60), (req, res) => {
-    if (req.query.user && typeof req.query.user == 'string') {
-        const user = JSON.parse(req.query.user)
-        linkmap.logger.info(`GET ${req.path} from ${user.username}#${user.identifyNum} (ID ${user.id})`);
+app.get("/creator/search", logAccess(), cache(1), (req, res) => {
+    if (req.query.keyword) {
+        let keyword = <string>req.query.keyword;
+        pixNode.fetch.searchForUser(auth, keyword).then((data) => {
+            res.send(data);
+        }).catch((err) => {
+            res.status(err.response.status);
+            res.send({
+                code: err.response.status,
+                message: err.response.statusText,
+                data: err.response.data
+            });
+        })
     } else {
-        linkmap.logger.info(`GET ${req.path}`);
+        res.status(400).send({
+            code: 400,
+            response: { message: "Please specificate the user name." }
+        });
     }
+})
+
+app.get("/creator/illustration", logAccess(), cache(10 * 60), (req, res) => {
     var keyword: number;
     if (req.query.keyword === undefined) {
         res.status(400);
