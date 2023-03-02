@@ -8,5 +8,4 @@ map.json
 key.json
 users.json
 yarn.lock
-*.js
 generateKeys/results/
