@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "node --nolazy -r ts-node/register src/index.ts",
-    "login": "node --nolazy -r ts-node/register src/login.ts"
+    "login": "node --nolazy -r ts-node/register src/login.ts",
+    "pm2": "pm2 start src/pm2-windows.js --name='pixiv-web-api'"
   },
   "author": "",
   "license": "MIT",
