@@ -37,6 +37,19 @@ const cache = (duration: number) => {
     }
 }
 
+
+function authorize() {
+    return (req: Request, res: Response, next: Function) => {
+        if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
+            next();
+        } else {
+            res.status(401).send({
+                code: "401",
+                message: "unauthorized"
+            });
+        }
+    }
+}
 function logAccess() {
     return (req: Request, res: Response, next: Function) => {
         if (req.query.user && typeof req.query.user == 'string') {
@@ -51,6 +64,7 @@ function logAccess() {
         next();
     }
 }
+
 
 try {
     var auth = JSON.parse(fs.readFileSync(upath.join(__dirname, "/config/auth.json"), { encoding: 'utf-8', flag: 'r' }));
@@ -99,7 +113,7 @@ if (auth.refresh_token == undefined) {
     throw `LoginError: run "npm run login" first`;
 }
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '50mb' }), logAccess(), authorize());
 
 /**
  * Admin
@@ -114,7 +128,7 @@ app.get('/manage/save', (req, res) => {
 /**
  * User
  */
-app.get('/user/profile', logAccess(), (req, res) => {
+app.get('/user/profile', (req, res) => {
     const uid = req.query.id;
     if (typeof uid == 'string' && !isNaN(parseInt(uid))) {
         users.detail(uid).then((profile) => {
@@ -137,80 +151,66 @@ app.get('/user/profile', logAccess(), (req, res) => {
 
 });
 app.post('/user/profile/update', (req, res) => {
-    linkmap.logger.info(`POST ${req.path}`);
-    if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
-        const data: users.user = req.body;
-        if (users.isUser(data)) {
-            users.update(data);
-            res.send({ "code": "0", "message": "Update success." });
-        } else {
-            res.send({ "code": "40000", "message": "Wrong user format." });
-        }
+    const data: users.user = req.body;
+    if (users.isUser(data)) {
+        users.update(data);
+        res.send({ "code": "0", "message": "Update success." });
     } else {
-        res.status(401);
-        res.send({ "code": "401", "message": "Authorization failed" });
-        linkmap.logger.debug("Unauthrozied request for key status");
+        res.send({ "code": "40000", "message": "Wrong user format." });
     }
 })
-app.post('/user/key/activate', logAccess(), async (req, res) => {
-
-    if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
-        const key: string = req.body.key;
-        const uid: string = req.body.user.id;
-        if (keygen.validate(key)) {
-            const keyDetail = keygen.getDetail(key);
-            if (!keyDetail.used && keyDetail.type != "invalid") {
-                await users.detail(uid).catch((e) => {
-                    if (e.code == "40002") { // User not found
-                        if (req.body.user) {
-                            const user = req.body.user;
-                            users.init(user);
-                        } else {
-                            linkmap.logger.warn(e);
-                            return res.send(e);
-                        }
+app.post('/user/key/activate', async (req, res) => {
+    const key: string = req.body.key;
+    const uid: string = req.body.user.id;
+    if (keygen.validate(key)) {
+        const keyDetail = keygen.getDetail(key);
+        if (!keyDetail.used && keyDetail.type != "invalid") {
+            await users.detail(uid).catch((e) => {
+                if (e.code == "40002") { // User not found
+                    if (req.body.user) {
+                        const user = req.body.user;
+                        users.init(user);
                     } else {
-                        linkmap.logger.error(e);
+                        linkmap.logger.warn(e);
+                        return res.send(e);
                     }
-                });
-                await users.detail(uid).then((user) => {
-                    if (keyDetail.type == "sub") {
-                        const now = Date.now();
-                        if (user.pixiv.expire < Date.now()) user.pixiv.expire = now;
-                        const expireAfter = user.pixiv.expire - now;
-                        if (user.pixiv.tier == keyDetail.tier) {
-                            user.pixiv.expire = now + expireAfter + keygen.getMillsecFromPeriod(keyDetail.period);
-                        } else {
-                            if (keygen.getTierDifference(user.pixiv.tier, keyDetail.tier) > 1) { // Current tier is higher
-                                user.pixiv.expire = now + expireAfter + keygen.getMillsecFromPeriod(keyDetail.period) * keygen.getTierDifference(keyDetail.tier, user.pixiv.tier);
-                            } else { // Current tier is lower
-                                user.pixiv.expire = now + keygen.getMillsecFromPeriod(keyDetail.period) + expireAfter * keygen.getTierDifference(user.pixiv.tier, keyDetail.tier);
-                                user.pixiv.tier = keyDetail.tier;
-                            }
-                        }
-                    } else if (keyDetail.type == "quantum") {
-                        user.pixiv.quantum_pack_capacity += users.quantumCapacityPerPack;
-                    }
-                    user.pixiv.statistics.keys_activated++;
-                    user.pixiv.statistics.activated_key.push(keyDetail);
-                    users.update(user);
-                    users.save();
-                    keygen.activate(keyDetail.key, uid, keyDetail.tier, keyDetail.type);
-                    keygen.save();
-                }).catch((e) => {
+                } else {
                     linkmap.logger.error(e);
-                });
-                res.send({ "code": "0", "message": "Activate success.", "data": keygen.getDetail(key) });
-            } else {
-                res.send({ "code": "40001", "message": "The key is already been used or does not exist." });
-            }
+                }
+            });
+            await users.detail(uid).then((user) => {
+                if (keyDetail.type == "sub") {
+                    const now = Date.now();
+                    if (user.pixiv.expire < Date.now()) user.pixiv.expire = now;
+                    const expireAfter = user.pixiv.expire - now;
+                    if (user.pixiv.tier == keyDetail.tier) {
+                        user.pixiv.expire = now + expireAfter + keygen.getMillsecFromPeriod(keyDetail.period);
+                    } else {
+                        if (keygen.getTierDifference(user.pixiv.tier, keyDetail.tier) > 1) { // Current tier is higher
+                            user.pixiv.expire = now + expireAfter + keygen.getMillsecFromPeriod(keyDetail.period) * keygen.getTierDifference(keyDetail.tier, user.pixiv.tier);
+                        } else { // Current tier is lower
+                            user.pixiv.expire = now + keygen.getMillsecFromPeriod(keyDetail.period) + expireAfter * keygen.getTierDifference(user.pixiv.tier, keyDetail.tier);
+                            user.pixiv.tier = keyDetail.tier;
+                        }
+                    }
+                } else if (keyDetail.type == "quantum") {
+                    user.pixiv.quantum_pack_capacity += users.quantumCapacityPerPack;
+                }
+                user.pixiv.statistics.keys_activated++;
+                user.pixiv.statistics.activated_key.push(keyDetail);
+                users.update(user);
+                users.save();
+                keygen.activate(keyDetail.key, uid, keyDetail.tier, keyDetail.type);
+                keygen.save();
+            }).catch((e) => {
+                linkmap.logger.error(e);
+            });
+            res.send({ "code": "0", "message": "Activate success.", "data": keygen.getDetail(key) });
         } else {
-            res.send({ "code": "40000", "message": "Illegal key." });
+            res.send({ "code": "40001", "message": "The key is already been used or does not exist." });
         }
     } else {
-        res.status(401);
-        res.send({ "code": "401", "message": "Authorization failed" });
-        linkmap.logger.debug("Unauthrozied request for key status");
+        res.send({ "code": "40000", "message": "Illegal key." });
     }
 })
 
@@ -219,24 +219,17 @@ app.post('/user/key/activate', logAccess(), async (req, res) => {
  */
 
 app.post('/linkmap/update', (req, res) => {
-    linkmap.logger.info(`POST ${req.path}`);
-    if (req.headers.authorization && config.bearer.includes(req.headers.authorization)) {
-        res.send({ "code": "200", "message": "Success" });
-        for (const key in req.body) {
-            for (const page in req.body[key]) {
-                linkmap.addMap(key, page, req.body[key][page].kookLink, req.body[key][page].NSFWResult)
-            }
+    res.send({ "code": "200", "message": "Success" });
+    for (const key in req.body) {
+        for (const page in req.body[key]) {
+            linkmap.addMap(key, page, req.body[key][page].kookLink, req.body[key][page].NSFWResult)
         }
-        linkmap.logger.debug("Linkmap updated");
-        linkmap.logger.trace("Full request body:");
-        linkmap.logger.trace(req.body)
-    } else {
-        res.status(401);
-        res.send({ "code": "401", "message": "Authorization failed" });
-        linkmap.logger.debug("Linkmap updating Authorization failed");
     }
+    linkmap.logger.debug("Linkmap updated");
+    linkmap.logger.trace("Full request body:");
+    linkmap.logger.trace(req.body);
 })
-app.get('/linkmap', logAccess(), cache(1), (req, res) => {
+app.get('/linkmap', cache(1), (req, res) => {
     res.send(linkmap.map);
 })
 
@@ -244,7 +237,7 @@ app.get('/linkmap', logAccess(), cache(1), (req, res) => {
  * Illustrations
  */
 
-app.get('/illustration/related', logAccess(), cache(15 * 60), (req, res) => {
+app.get('/illustration/related', cache(15 * 60), (req, res) => {
     var keyword = -1;
     if (req.query.keyword === undefined) {
         res.status(400);
@@ -275,12 +268,11 @@ app.get('/illustration/related', logAccess(), cache(15 * 60), (req, res) => {
     });
 });
 
-app.get('/illustration/recommend', logAccess(), cache(1), (req, res) => {
+app.get('/illustration/recommend', cache(1), (req, res) => {
     pixNode.fetch.recommendedIllustrations(auth, { contentType: "ILLUSTRATION", }).then((data) => {
         res.send(data);
     }).catch((err) => {
-        res.status(err.response.status);
-        res.send({
+        res.status(err.response.status).send({
             code: err.response.status,
             message: err.response.statusText,
             data: err.response.data
@@ -291,7 +283,7 @@ app.get('/illustration/recommend', logAccess(), cache(1), (req, res) => {
 /**
  * Get today's ranklist
  */
-app.get('/illustration/ranklist', logAccess(), cache(15 * 60), (req, res) => {
+app.get('/illustration/ranklist', cache(15 * 60), (req, res) => {
     var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
     var duration: "DAY" | "WEEK" | "MONTH" | "DAY_MALE" | "DAY_FEMALE" | "WEEK_ORIGINAL" | "WEEK_ROOKIE" | "DAY_MANGA" | undefined
     if (dur == "DAY" || dur == "WEEK" || dur == "MONTH" || dur == "DAY_MALE" || dur == "DAY_FEMALE" || dur == "WEEK_ORIGINAL" || dur == "WEEK_ROOKIE" || dur == "DAY_MANGA") {
@@ -314,7 +306,7 @@ app.get('/illustration/ranklist', logAccess(), cache(15 * 60), (req, res) => {
 /**
  * Tag ranklist
  */
-app.get('/illustration/tag', logAccess(), cache(20 * 60), (req, res) => {
+app.get('/illustration/tag', cache(20 * 60), (req, res) => {
     const offset = typeof req.query.offset === "string" ? parseInt(req.query.offset) : undefined;
     var dur = typeof req.query.duration == "string" ? req.query.duration : undefined;
     var duration: "LAST_DAY" | "LAST_WEEK" | "LAST_MONTH" | undefined;
@@ -354,7 +346,7 @@ app.get('/illustration/tag', logAccess(), cache(20 * 60), (req, res) => {
     })
 })
 
-app.get("/illustration/detail", logAccess(), cache(30 * 60), (req, res) => {
+app.get("/illustration/detail", cache(30 * 60), (req, res) => {
     var keyword = -1;
     if (req.query.keyword === undefined) {
         res.status(400);
@@ -385,7 +377,7 @@ app.get("/illustration/detail", logAccess(), cache(30 * 60), (req, res) => {
     })
 })
 
-app.get("/creator/search", logAccess(), cache(1), (req, res) => {
+app.get("/creator/search", cache(1), (req, res) => {
     if (req.query.keyword) {
         let keyword = <string>req.query.keyword;
         pixNode.fetch.searchForUser(auth, keyword).then((data) => {
@@ -406,7 +398,7 @@ app.get("/creator/search", logAccess(), cache(1), (req, res) => {
     }
 })
 
-app.get("/creator/illustration", logAccess(), cache(10 * 60), (req, res) => {
+app.get("/creator/illustration", cache(10 * 60), (req, res) => {
     var keyword: number;
     if (req.query.keyword === undefined) {
         res.status(400);
