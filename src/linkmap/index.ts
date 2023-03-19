@@ -43,15 +43,18 @@ export namespace linkmap {
             blurAmount: number
         }
     }
-    export function load(): void {
+    export function _load(): void {
         if (fs.existsSync(upath.join(__dirname, "..", "/config/map.json"))) {
             map = JSON.parse(fs.readFileSync(upath.join(__dirname, "..", "/config/map.json"), { encoding: "utf-8", flag: "r" }));
             logger.info(`Loaded linkmap`);
         } else {
             map = {};
-            save();
             logger.warn(`Linkmap not found, creating new`);
         }
+    }
+    export function load(): void {
+        _load();
+        save();
     }
 
     export function isInDatabase(illustID: string): boolean {
@@ -114,15 +117,18 @@ export namespace linkmap {
         };
     }
 
+    export function _save() {
+        fs.writeFileSync(upath.join(__dirname, "..", "/config/map.json"), JSON.stringify(map));
+    }
     export function save() {
-        fs.writeFile(upath.join(__dirname, "..", "/config/map.json"), JSON.stringify(map), (err) => {
-            if (err) {
-                logger.warn(`Saving linkmap failed, error message: `);
-                logger.warn(err);
+        do {
+            try {
+                _save();
+                _load();
+                break;
+            } catch (e) {
+                logger.error(e);
             }
-            else {
-                logger.info(`Saved linkmap`);
-            }
-        });
+        } while (true);
     }
 }
