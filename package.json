@@ -16,7 +16,6 @@
     "@types/node-schedule": "^2.1.0",
     "@types/readline-sync": "^1.4.4",
     "bunyan": "^1.8.15",
-    "crypto": "^1.0.1",
     "express": "^4.17.3",
     "fs": "^0.0.1-security",
     "memory-cache": "^0.2.0",
