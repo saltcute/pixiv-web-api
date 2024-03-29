@@ -85,7 +85,7 @@ schedule.scheduleJob("0,15,30,45 * * * * ", () => {
 schedule.scheduleJob("0 4 * * * ", () => {
     users.resetDailyCounter();
 })
-var job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
+var job = schedule.scheduleJob(auth.expire_time - 60, () => {
     refresh();
 })
 if (auth.expire_time - 60 < Math.round(Date.now())) {
@@ -98,7 +98,7 @@ function refresh() {
         linkmap.logger.info("Token refreshed");
         try {
             job?.cancel();
-            job = schedule.scheduleJob((auth.expire_time - 60) * 1000, () => {
+            job = schedule.scheduleJob(auth.expire_time - 60, () => {
                 refresh();
             })
         } catch (err) {
